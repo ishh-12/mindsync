@@ -11,7 +11,7 @@ export default function HowItWorks() {
   return (
     <section style={{ padding: '6rem 2rem', maxWidth: '900px', margin: '0 auto' }}>
       <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-        // PROTOCOL
+        {'// PROTOCOL'}
       </div>
       <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: 900, color: '#e8f4f8', marginBottom: '3rem', letterSpacing: '-0.01em' }}>
         HOW IT WORKS

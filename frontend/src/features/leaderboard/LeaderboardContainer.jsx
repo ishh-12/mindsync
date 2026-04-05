@@ -31,10 +31,10 @@ export default function LeaderboardContainer() {
         }}
           onMouseEnter={e => e.target.style.color = '#00e5ff'}
           onMouseLeave={e => e.target.style.color = '#4a6480'}
-        >← BACK</button>
+        >BACK</button>
 
         <div style={{ fontFamily: 'Share Tech Mono', color: '#ffd60a', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-          // RANKINGS
+          {'// RANKINGS'}
         </div>
         <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
           LEADERBOARD
@@ -51,7 +51,7 @@ export default function LeaderboardContainer() {
           cursor: 'pointer',
           boxShadow: '0 0 20px rgba(0,229,255,0.3)',
         }}>
-          PLAY NOW →
+          PLAY NOW
         </button>
       </div>
     </div>

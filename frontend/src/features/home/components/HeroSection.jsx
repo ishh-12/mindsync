@@ -5,7 +5,10 @@ export default function HeroSection() {
   const navigate = useNavigate();
   const [visible, setVisible] = useState(false);
 
-  useEffect(() => { setTimeout(() => setVisible(true), 100); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <section style={{
@@ -13,14 +16,12 @@ export default function HeroSection() {
       justifyContent: 'center', alignItems: 'center', textAlign: 'center',
       padding: '2rem', position: 'relative', overflow: 'hidden',
     }}>
-      {/* Background grid */}
       <div style={{
         position: 'absolute', inset: 0,
         backgroundImage: 'linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px)',
         backgroundSize: '40px 40px',
       }} />
 
-      {/* Glow orb */}
       <div style={{
         position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
         width: '400px', height: '400px',
@@ -30,7 +31,7 @@ export default function HeroSection() {
 
       <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(30px)', transition: 'all 0.8s ease', position: 'relative' }}>
         <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.8rem', letterSpacing: '0.3em', marginBottom: '1rem' }}>
-          // CLASSIFIED: MULTIPLAYER PROTOCOL
+          {'// CLASSIFIED: MULTIPLAYER PROTOCOL'}
         </div>
 
         <h1 style={{
@@ -80,9 +81,8 @@ export default function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll hint */}
       <div style={{ position: 'absolute', bottom: '2rem', left: '50%', transform: 'translateX(-50%)', color: '#1a2d44', fontSize: '0.7rem', fontFamily: 'Share Tech Mono', letterSpacing: '0.2em' }}>
-        SCROLL DOWN ↓
+        SCROLL DOWN
       </div>
     </section>
   );

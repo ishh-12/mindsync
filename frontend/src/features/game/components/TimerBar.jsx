@@ -8,10 +8,16 @@ export default function TimerBar({ duration, onExpire }) {
   }, [duration]);
 
   useEffect(() => {
-    if (timeLeft <= 0) { onExpire && onExpire(); return; }
-    const t = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-    return () => clearTimeout(t);
-  }, [timeLeft]);
+    if (timeLeft <= 0) {
+      if (onExpire) {
+        onExpire();
+      }
+      return;
+    }
+
+    const timer = setTimeout(() => setTimeLeft(value => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [timeLeft, onExpire]);
 
   const pct = (timeLeft / duration) * 100;
   const color = timeLeft > duration * 0.5 ? '#00e5ff' : timeLeft > duration * 0.25 ? '#ffd60a' : '#ff3b5c';

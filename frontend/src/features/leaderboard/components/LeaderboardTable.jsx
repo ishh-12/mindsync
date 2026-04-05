@@ -1,47 +1,88 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getLeaderboardAPI } from '../../../services/api';
 
-const MOCK_DATA = [
-  { rank: 1, name: 'SHADOW_OPS', score: 95, games: 12 },
-  { rank: 2, name: 'CIPHER_X', score: 88, games: 8 },
-  { rank: 3, name: 'DELTA_FORCE', score: 82, games: 15 },
-  { rank: 4, name: 'GHOST_SIGNAL', score: 76, games: 6 },
-  { rank: 5, name: 'BINARY_WOLF', score: 71, games: 9 },
-];
-
-const rankColor = (r) => {
-  if (r === 1) return '#ffd60a';
-  if (r === 2) return '#e8f4f8';
-  if (r === 3) return '#ff8c42';
+const rankColor = (rank) => {
+  if (rank === 1) return '#ffd60a';
+  if (rank === 2) return '#e8f4f8';
+  if (rank === 3) return '#ff8c42';
   return '#4a6480';
 };
 
 export default function LeaderboardTable() {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    const loadLeaderboard = async () => {
+      setLoading(true);
+      setError('');
+
+      const data = await getLeaderboardAPI();
+      if (!active) return;
+
+      if (data.success) {
+        setEntries(data.entries || []);
+      } else {
+        setError(data.message || 'Unable to load leaderboard');
+      }
+
+      setLoading(false);
+    };
+
+    loadLeaderboard();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <div>
-      {/* Header */}
       <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 60px', gap: '0.5rem', padding: '0 0.5rem 0.75rem', borderBottom: '1px solid #1a2d44', marginBottom: '0.5rem' }}>
-        {['#', 'CALLSIGN', 'SCORE', 'GAMES'].map(h => (
-          <div key={h} style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em' }}>{h}</div>
+        {['#', 'CALLSIGN', 'SCORE', 'GAMES'].map(header => (
+          <div key={header} style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em' }}>{header}</div>
         ))}
       </div>
 
-      {MOCK_DATA.map((p, i) => (
-        <div key={i} style={{
+      {loading && (
+        <div style={{ border: '1px solid #1a2d44', background: '#080c14', padding: '1.25rem', textAlign: 'center', fontFamily: 'Share Tech Mono', color: '#4a6480' }}>
+          LOADING LEADERBOARD...
+        </div>
+      )}
+
+      {!loading && error && (
+        <div style={{ border: '1px solid #ff3b5c44', background: '#080c14', padding: '1.25rem', textAlign: 'center', fontFamily: 'Share Tech Mono', color: '#ff3b5c' }}>
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && entries.length === 0 && (
+        <div style={{ border: '1px solid #1a2d44', background: '#080c14', padding: '1.25rem', textAlign: 'center' }}>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.2rem', fontWeight: 700, color: '#e8f4f8', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+            NO LEADERBOARD DATA YET
+          </div>
+          <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.72rem', color: '#4a6480', lineHeight: 1.7 }}>
+            Finish a real match to create leaderboard entries.
+          </div>
+        </div>
+      )}
+
+      {!loading && !error && entries.map((entry, index) => (
+        <div key={entry._id || entry.name} style={{
           display: 'grid', gridTemplateColumns: '40px 1fr 80px 60px',
           gap: '0.5rem', padding: '0.75rem 0.5rem',
           borderBottom: '1px solid #1a2d441a',
-          background: p.rank === 1 ? 'rgba(255,214,10,0.03)' : 'transparent',
-          transition: 'background 0.2s',
-        }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,229,255,0.03)'}
-          onMouseLeave={e => e.currentTarget.style.background = p.rank === 1 ? 'rgba(255,214,10,0.03)' : 'transparent'}
-        >
-          <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.2rem', fontWeight: 900, color: rankColor(p.rank) }}>
-            {p.rank === 1 ? '👑' : p.rank}
+          background: index === 0 ? 'rgba(255,214,10,0.03)' : 'transparent',
+        }}>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.2rem', fontWeight: 900, color: rankColor(index + 1) }}>
+            {index + 1}
           </div>
-          <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.8rem', color: '#e8f4f8', letterSpacing: '0.05em' }}>{p.name}</div>
-          <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.1rem', fontWeight: 700, color: '#00e5ff' }}>{p.score}</div>
-          <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: '#4a6480' }}>{p.games}</div>
+          <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.8rem', color: '#e8f4f8', letterSpacing: '0.05em' }}>{entry.name}</div>
+          <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.1rem', fontWeight: 700, color: '#00e5ff' }}>{entry.bestScore}</div>
+          <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: '#4a6480' }}>{entry.gamesPlayed}</div>
         </div>
       ))}
     </div>

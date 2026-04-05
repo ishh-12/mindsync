@@ -26,12 +26,11 @@ export default function ResultContainer() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00e5ff' }} />
 
         <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '2rem' }}>
-          // DEBRIEF
+          {'// DEBRIEF'}
         </div>
 
         <ScoreCard score={score} />
 
-        {/* Score breakdown */}
         <div style={{ border: '1px solid #1a2d44', padding: '1rem', marginBottom: '2rem', background: '#080c14' }}>
           <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.75rem' }}>
             SCORING GUIDE

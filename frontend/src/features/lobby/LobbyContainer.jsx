@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import RoomCode from './components/RoomCode';
 import PlayerList from './components/PlayerList';
 import StartButton from './components/StartButton';
+import socket from '../../services/socket';
 
 export default function LobbyContainer() {
   const { roomCode } = useParams();
@@ -10,17 +11,59 @@ export default function LobbyContainer() {
   const navigate = useNavigate();
   const name = searchParams.get('name') || 'PLAYER';
   const isHost = searchParams.get('host') === 'true';
+  const [players, setPlayers] = useState([]);
+  const joinedKeyRef = useRef('');
 
-  // Mock second player joining after 2s (replace with socket later)
-  const [players, setPlayers] = useState([{ name, isHost }]);
   useEffect(() => {
-    if (isHost) {
-      const t = setTimeout(() => setPlayers(p => [...p, { name: 'WAITING...', isHost: false }]), 2000);
-      return () => clearTimeout(t);
-    } else {
-      setPlayers([{ name: 'HOST', isHost: true }, { name, isHost: false }]);
+    setPlayers([]);
+
+    const joinKey = `${roomCode}:${name}`;
+    if (joinedKeyRef.current !== joinKey) {
+      joinedKeyRef.current = joinKey;
+      console.log('LOBBY JOIN EMIT:', { roomCode, name, isHost });
+      socket.emit('join_room', {
+        roomCode,
+        name,
+      });
     }
-  }, []);
+
+    const onRoomUpdate = (room) => {
+      const mappedPlayers = (room.players || []).map((player, index) => ({
+        name: player.name,
+        isHost: index === 0,
+      }));
+      setPlayers(mappedPlayers);
+    };
+
+    const onGameStarted = (data) => {
+      console.log('GAME STARTED EVENT:', data);
+      navigate(`/game/${roomCode}?name=${encodeURIComponent(name)}`, {
+        state: {
+          players: data.players,
+          currentPlayerName: name,
+        },
+      });
+    };
+
+    const onError = (message) => {
+      alert(message);
+    };
+
+    socket.on('room_update', onRoomUpdate);
+    socket.on('game_started', onGameStarted);
+    socket.on('error', onError);
+
+    return () => {
+      socket.off('room_update', onRoomUpdate);
+      socket.off('game_started', onGameStarted);
+      socket.off('error', onError);
+    };
+  }, [roomCode, name, navigate]);
+
+  const handleStart = () => {
+    console.log('START GAME EMIT:', { roomCode, name });
+    socket.emit('start_game', { roomCode });
+  };
 
   const canStart = players.length === 2 && isHost;
 
@@ -39,7 +82,7 @@ export default function LobbyContainer() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00e5ff' }} />
 
         <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-          // STAGING AREA
+          {'// STAGING AREA'}
         </div>
         <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
           LOBBY
@@ -47,7 +90,7 @@ export default function LobbyContainer() {
 
         <RoomCode code={roomCode} />
         <PlayerList players={players} />
-        <StartButton canStart={canStart} isHost={isHost} onStart={() => navigate(`/game/${roomCode}`)} />
+        <StartButton canStart={canStart} isHost={isHost} onStart={handleStart} />
       </div>
     </div>
   );

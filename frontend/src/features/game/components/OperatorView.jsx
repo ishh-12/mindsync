@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import OptionButton from './OptionButton';
 import SignalPanel from './SignalPanel';
 
@@ -6,10 +6,10 @@ export default function OperatorView({ options, onSelect, selected, onSignal, la
   return (
     <div>
       <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#ffd60a', letterSpacing: '0.3em', marginBottom: '1.5rem' }}>
-        ⚙️ ROLE: OPERATOR
+        ROLE: OPERATOR
       </div>
       <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
-        // SELECT OPTION
+        {'// SELECT OPTION'}
       </div>
       {options.map((opt, i) => (
         <OptionButton key={i} value={opt} onClick={onSelect} selected={selected === opt} disabled={!!selected} />

@@ -1,16 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createRoom } from '../../../services/api';
 
 export default function CreateRoomForm() {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
-    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
-    setTimeout(() => navigate(`/lobby/${code}?name=${name}&host=true`), 800);
+
+    const data = await createRoom();
+
+    if (data.success) {
+      navigate(`/lobby/${data.roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
+      return;
+    }
+
+    alert(data.message || 'Unable to create room');
+    setLoading(false);
   };
 
   return (
@@ -22,7 +31,7 @@ export default function CreateRoomForm() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00e5ff' }} />
 
       <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-        // INITIALIZE ROOM
+        {'// INITIALIZE ROOM'}
       </div>
       <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
         CREATE ROOM
@@ -62,7 +71,7 @@ export default function CreateRoomForm() {
           boxShadow: name.trim() ? '0 0 20px rgba(0,229,255,0.3)' : 'none',
         }}
       >
-        {loading ? 'INITIALIZING...' : 'CREATE ROOM →'}
+        {loading ? 'INITIALIZING...' : 'CREATE ROOM ->'}
       </button>
     </div>
   );

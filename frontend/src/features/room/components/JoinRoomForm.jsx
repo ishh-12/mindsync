@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getRoomAPI } from '../../../services/api';
 
 export default function JoinRoomForm() {
   const [name, setName] = useState('');
@@ -7,10 +8,20 @@ export default function JoinRoomForm() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     if (!name.trim() || !code.trim()) return;
     setLoading(true);
-    setTimeout(() => navigate(`/lobby/${code.toUpperCase()}?name=${name}&host=false`), 800);
+
+    const roomCode = code.toUpperCase();
+    const data = await getRoomAPI(roomCode);
+
+    if (data.success) {
+      navigate(`/lobby/${roomCode}?name=${encodeURIComponent(name.trim())}&host=false`);
+      return;
+    }
+
+    alert(data.message || 'Unable to join room');
+    setLoading(false);
   };
 
   const canJoin = name.trim() && code.trim();
@@ -24,7 +35,7 @@ export default function JoinRoomForm() {
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#ff3b5c' }} />
 
       <div style={{ fontFamily: 'Share Tech Mono', color: '#ff3b5c', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
-        // ACCESS ROOM
+        {'// ACCESS ROOM'}
       </div>
       <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
         JOIN ROOM
@@ -32,7 +43,7 @@ export default function JoinRoomForm() {
 
       {[
         { label: 'YOUR CALLSIGN', val: name, set: setName, ph: 'ENTER NAME...', max: 16 },
-        { label: 'ROOM CODE', val: code, set: v => setCode(v.toUpperCase()), ph: 'ENTER CODE...', max: 6 },
+        { label: 'ROOM CODE', val: code, set: value => setCode(value.toUpperCase()), ph: 'ENTER CODE...', max: 6 },
       ].map((f, i) => (
         <div key={i} style={{ marginBottom: '1.5rem' }}>
           <label style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.2em', display: 'block', marginBottom: '0.5rem' }}>
@@ -71,7 +82,7 @@ export default function JoinRoomForm() {
           boxShadow: canJoin ? '0 0 20px rgba(255,59,92,0.3)' : 'none',
         }}
       >
-        {loading ? 'CONNECTING...' : 'JOIN ROOM →'}
+        {loading ? 'CONNECTING...' : 'JOIN ROOM ->'}
       </button>
     </div>
   );

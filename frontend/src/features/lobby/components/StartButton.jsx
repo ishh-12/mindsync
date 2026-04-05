@@ -18,7 +18,7 @@ export default function StartButton({ canStart, isHost, onStart }) {
       transition: 'all 0.2s',
       boxShadow: canStart ? '0 0 30px rgba(0,229,255,0.4)' : 'none',
     }}>
-      {canStart ? 'START GAME →' : 'WAITING FOR PLAYERS...'}
+      {canStart ? 'START GAME ->' : 'WAITING FOR PLAYERS...'}
     </button>
   );
 }
