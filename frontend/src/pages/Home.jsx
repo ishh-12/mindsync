@@ -1,8 +1,6 @@
-import React from "react";
-import HomeContainer from "../features/home/HomeContainer";
+import React from 'react';
+import HomeContainer from '../features/home/HomeContainer';
 
-function Home() {
+export default function Home() {
   return <HomeContainer />;
 }
-
-export default Home;
