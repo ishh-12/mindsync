@@ -33,6 +33,15 @@ const roomSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  trustScore: {
+     type: Number, default: 0
+     },   // trust in system
+lastChoices: {
+   type: [Number], default: [] 
+  }, // recent answers
+fastPlayer: { 
+  type: Boolean, default: false 
+}, // speed detection
 });
 
 module.exports = mongoose.model("Room", roomSchema);

@@ -22,7 +22,9 @@ export default function GameContainer() {
   const [feedback, setFeedback] = useState(null);
   const [selected, setSelected] = useState(null);
   const [clue, setClue] = useState('Waiting for level...');
+  const [isCorrupted, setIsCorrupted] = useState(false);
   const [options, setOptions] = useState([]);
+  const [isSocketReady, setIsSocketReady] = useState(false);
   const [timerDuration, setTimerDuration] = useState(15);
   const [timerKey, setTimerKey] = useState(0);
 
@@ -57,17 +59,11 @@ export default function GameContainer() {
   }, [roomCode, playerName]);
 
   useEffect(() => {
-    if (role === 'analyst') {
-      console.log('START LEVEL EMIT:', { roomCode, role, playerName });
-      socket.emit('start_level', { roomCode });
-    }
-  }, [roomCode, role, playerName]);
-
-  useEffect(() => {
     const onLevelData = (data) => {
       setRole(data.role);
       setLevel(data.level || 1);
-      setClue(data.clue || 'Waiting for clue...');
+      setClue(data.hint || data.clue || 'Waiting for clue...');
+      setIsCorrupted(Boolean(data.isCorrupted) && data.role === 'analyst');
       setOptions(data.options || []);
       setSelected(null);
       setFeedback(null);
@@ -86,6 +82,7 @@ export default function GameContainer() {
     const onResult = (data) => {
       setScore(data.score ?? 0);
       setLevel(data.level ?? 1);
+      setIsCorrupted(false);
       setFeedback(data.correct ? 'CORRECT' : 'WRONG');
       setSelected(null);
 
@@ -97,6 +94,7 @@ export default function GameContainer() {
     };
 
     const onTimeUp = (data) => {
+      setIsCorrupted(false);
       setFeedback(data.message || 'TIME UP');
       if (typeof data.score === 'number') {
         setScore(data.score);
@@ -131,8 +129,10 @@ export default function GameContainer() {
     socket.on('time_up', onTimeUp);
     socket.on('game_over', onGameOver);
     socket.on('error', onError);
+    setIsSocketReady(true);
 
     return () => {
+      setIsSocketReady(false);
       socket.off('level_data', onLevelData);
       socket.off('timer_start', onTimerStart);
       socket.off('receive_signal', onReceiveSignal);
@@ -142,6 +142,13 @@ export default function GameContainer() {
       socket.off('error', onError);
     };
   }, [roomCode, role, navigate]);
+
+  useEffect(() => {
+    if (role === 'analyst' && isSocketReady) {
+      console.log('START LEVEL EMIT:', { roomCode, role, playerName });
+      socket.emit('start_level', { roomCode });
+    }
+  }, [isSocketReady, roomCode, role, playerName]);
 
   const handleSelect = (value) => {
     setSelected(value);
@@ -203,7 +210,7 @@ export default function GameContainer() {
         )}
 
         {role === 'analyst'
-          ? <AnalystView clue={clue} isCorrupted={false} onSignal={handleSignal} lastSignal={signal} />
+          ? <AnalystView clue={clue} isCorrupted={isCorrupted} onSignal={handleSignal} lastSignal={signal} />
           : <OperatorView options={options} onSelect={handleSelect} selected={selected} onSignal={handleSignal} lastSignal={signal} />
         }
       </div>
