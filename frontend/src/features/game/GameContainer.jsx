@@ -84,23 +84,13 @@ export default function GameContainer() {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const [levelIdx, setLevelIdx] = useState(0);
-  const [role, setRole] = useState('operator');
-  const [selected, setSelected] = useState(null);
-  const [score, setScore] = useState(0);
-  const [signal, setSignal] = useState(null);
-  const [feedback, setFeedback] = useState(null);
-<<<<<<< HEAD
-  const [selected, setSelected] = useState(null);
-  const [clue, setClue] = useState('Waiting for level...');
-  const [isCorrupted, setIsCorrupted] = useState(false);
-  const [options, setOptions] = useState([]);
-  const [isSocketReady, setIsSocketReady] = useState(false);
-  const [timerDuration, setTimerDuration] = useState(15);
-  const [timerKey, setTimerKey] = useState(0);
-=======
->>>>>>> da9b1e4afeae19cd8ebb9bbad6dfb5b76fd0f70f
+const [role, setRole] = useState('operator');
+const [selected, setSelected] = useState(null);
+const [score, setScore] = useState(0);
+const [signal, setSignal] = useState(null);
+const [feedback, setFeedback] = useState(null);
+  
 
-  const level = LEVELS[levelIdx];
 
 <<<<<<< HEAD
     const syncRoomState = async () => {
@@ -228,24 +218,30 @@ export default function GameContainer() {
       roomCode,
       option: value,
     });
-=======
-  const handleSelect = (val) => {
-    if (selected || feedback) return;
-    setSelected(val);
-    const correct = val === level.answer;
-    const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
-    const pts = correct ? 10 + bonus : -5;
-    setScore(s => s + pts);
-    setFeedback(correct ? '✓ SURVIVED' : '✗ COMPROMISED');
-    setTimeout(() => {
-      setFeedback(null);
-      setSelected(null);
-      setSignal(null);
-      if (levelIdx < LEVELS.length - 1) setLevelIdx(i => i + 1);
-      else navigate('/result', { state: { score: score + pts } });
-    }, 1500);
->>>>>>> da9b1e4afeae19cd8ebb9bbad6dfb5b76fd0f70f
-  };
+const handleSelect = (val) => {
+  if (selected || feedback) return;
+
+  setSelected(val);
+
+  const correct = val === level.answer;
+  const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
+  const pts = correct ? 10 + bonus : -5;
+
+  setScore((s) => s + pts);
+  setFeedback(correct ? '✓ SURVIVED' : '✗ COMPROMISED');
+
+  setTimeout(() => {
+    setFeedback(null);
+    setSelected(null);
+    setSignal(null);
+
+    if (levelIdx < LEVELS.length - 1) {
+      setLevelIdx((i) => i + 1);
+    } else {
+      navigate('/result', { state: { score: score + pts } });
+    }
+  }, 1500);
+};
 
   const handleExpire = () => {
     if (feedback) return;
@@ -346,76 +342,37 @@ export default function GameContainer() {
           ? <AnalystView clue={clue} isCorrupted={isCorrupted} onSignal={handleSignal} lastSignal={signal} />
           : <OperatorView options={options} onSelect={handleSelect} selected={selected} onSignal={handleSignal} lastSignal={signal} />
         }
-=======
-        {/* OPERATOR VIEW */}
-        {role === 'operator' && (
-          <div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#ff3b5c', letterSpacing: '0.3em', marginBottom: '1.5rem' }}>
-              💀 ROLE: OPERATOR
-            </div>
+{/* OPERATOR VIEW */}
+{role === 'operator' && (
+  <div>
+    <div style={{ fontSize: '0.7rem', marginBottom: '1rem' }}>
+      💀 ROLE: OPERATOR
+    </div>
 
-            {/* Threat card */}
-            <div style={{ border: '1px solid #1a2d44', padding: '1.5rem', background: '#080c14', marginBottom: '1.5rem', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: dangerColor(level.operatorData.danger) }} />
-              <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
-                {level.operatorData.label}
-              </div>
-              <div style={{ fontFamily: 'Barlow Condensed', fontSize: '2.5rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '1rem' }}>
-                {level.operatorData.value}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dangerColor(level.operatorData.danger), boxShadow: `0 0 8px ${dangerColor(level.operatorData.danger)}` }} />
-                <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: dangerColor(level.operatorData.danger), letterSpacing: '0.2em' }}>
-                  DANGER: {level.operatorData.danger}
-                </span>
-              </div>
-            </div>
+    <h3>{level.operatorData.label}</h3>
+    <h1>{level.operatorData.value}</h1>
+    <p>DANGER: {level.operatorData.danger}</p>
 
-            {/* Signal buttons */}
-            {!level.silenced ? (
-              <div>
-                <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
-                  // SEND SIGNAL TO ANALYST
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {[
-                    { label: 'STATIC', color: '#00ff88' },
-                    { label: 'SIGNAL', color: '#ffd60a' },
-                    { label: 'BREACH', color: '#ff3b5c' },
-                  ].map(s => (
-                    <button key={s.label} onClick={() => setSignal(s.label)} style={{
-                      flex: 1, padding: '0.75rem 0.25rem',
-                      background: signal === s.label ? s.color : 'transparent',
-                      color: signal === s.label ? '#080c14' : s.color,
-                      border: `1px solid ${s.color}44`,
-                      fontFamily: 'Share Tech Mono', fontSize: '0.7rem',
-                      letterSpacing: '0.05em', cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: signal === s.label ? `0 0 15px ${s.color}44` : 'none',
-                    }}
-                      onMouseEnter={e => { if (signal !== s.label) e.currentTarget.style.borderColor = s.color; }}
-                      onMouseLeave={e => { if (signal !== s.label) e.currentTarget.style.borderColor = `${s.color}44`; }}
-                    >{s.label}</button>
-                  ))}
-                </div>
-                <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', marginTop: '0.75rem', letterSpacing: '0.05em' }}>
-                  STATIC=LOW &nbsp;|&nbsp; SIGNAL=MEDIUM &nbsp;|&nbsp; BREACH=HIGH
-                </div>
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '1rem', fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: '#4a6480', letterSpacing: '0.1em', border: '1px solid #1a2d44' }}>
-                ⛔ CANNOT SEND SIGNALS THIS ROUND
-              </div>
-            )}
-          </div>
-        )}
+    {!level.silenced ? (
+      <div>
+        <button onClick={() => setSignal('STATIC')}>STATIC</button>
+        <button onClick={() => setSignal('SIGNAL')}>SIGNAL</button>
+        <button onClick={() => setSignal('BREACH')}>BREACH</button>
+      </div>
+    ) : (
+      <p>⛔ SIGNALS DISABLED</p>
+    )}
+  </div>
+)}
 
-        {/* ANALYST VIEW */}
-        {role === 'analyst' && (
-          <div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#00e5ff', letterSpacing: '0.3em', marginBottom: '1.5rem' }}>
-              🧠 ROLE: ANALYST
-            </div>
+{/* ANALYST VIEW */}
+{role === 'analyst' && (
+  <div>
+    <div>🧠 ROLE: ANALYST</div>
+
+    <h3>Signal: {signal || 'WAITING...'}</h3>
+
+    {level.options
 
             {/* Signal received */}
             <div style={{
@@ -466,9 +423,7 @@ export default function GameContainer() {
           letterSpacing: '0.1em', padding: '0.4rem', cursor: 'pointer',
         }}>
           [DEV] SWITCH → {role === 'operator' ? 'ANALYST' : 'OPERATOR'}
-        </button>
+        </button
 >>>>>>> da9b1e4afeae19cd8ebb9bbad6dfb5b76fd0f70f
       </div>
     </div>
-  );
-}
