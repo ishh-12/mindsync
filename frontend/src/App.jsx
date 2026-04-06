@@ -7,11 +7,13 @@ import Lobby from './pages/Lobby';
 import Game from './pages/Game';
 import Result from './pages/Result';
 import Leaderboard from './pages/Leaderboard';
+import ControlRoomBG from './ControlRoomBG';
 import './styles/global.css';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <ControlRoomBG />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/create-room" element={<CreateRoom />} />
