@@ -14,6 +14,7 @@ export default function CreateRoomForm() {
     const data = await createRoom();
 
     if (data.success) {
+      localStorage.setItem('playerName', name.trim());
       navigate(`/lobby/${data.roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
       return;
     }

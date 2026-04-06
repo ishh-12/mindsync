@@ -1,21 +1,17 @@
-const generateLevelData = (level) => {
-  let target = Math.floor(Math.random() * 20) + 1;
+const { LEVELS } = require("../data/levels");
 
-  let options = [];
-
-  // generate random options
-  for (let i = 0; i < 4; i++) {
-    options.push(Math.floor(Math.random() * 20) + 1);
-  }
-
-  // ensure correct answer exists
-  options[Math.floor(Math.random() * 4)] = target;
-
+const generateLevelData = (levelNumber) => {
+  const idx = (levelNumber || 1) - 1;
+  const level = LEVELS[Math.min(idx, LEVELS.length - 1)];
+  
   return {
-    clue: `Target = ${target}`,
-    options,
-    correctAnswer: target,
-    level,
+    id: level.id,
+    name: level.name,
+    subtitle: level.subtitle,
+    timeLimit: level.timeLimit,
+    analystData: level.analyst,
+    operatorData: level.operator,
+    briefing: level.briefing
   };
 };
 

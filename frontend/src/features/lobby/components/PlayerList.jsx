@@ -21,6 +21,11 @@ export default function PlayerList({ players }) {
           <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.85rem', color: players[i] ? '#e8f4f8' : '#1a2d44' }}>
             {players[i] ? players[i].name : 'WAITING FOR PLAYER...'}
           </span>
+          {players[i]?.role && (
+            <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: players[i].role === 'operator' ? '#ff3b5c' : '#00e5ff', letterSpacing: '0.1em' }}>
+              [{players[i].role?.toUpperCase()}]
+            </span>
+          )}
           {players[i]?.isHost && (
             <span style={{ marginLeft: 'auto', fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#ffd60a', letterSpacing: '0.1em' }}>HOST</span>
           )}

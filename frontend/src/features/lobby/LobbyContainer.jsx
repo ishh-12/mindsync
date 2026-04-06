@@ -30,6 +30,7 @@ export default function LobbyContainer() {
     const onRoomUpdate = (room) => {
       const mappedPlayers = (room.players || []).map((player, index) => ({
         name: player.name,
+        role: player.role,
         isHost: index === 0,
       }));
       setPlayers(mappedPlayers);

@@ -1,320 +1,365 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import TimerBar from './components/TimerBar';
+import React from "react";
+import TimerBar from "./components/TimerBar";
 
-const LEVELS = [
-  {
-    id: 1,
-    name: 'WARMUP',
-    subtitle: 'THREAT ASSESSMENT',
-    duration: 30,
-    operatorData: { label: 'THREAT LEVEL', value: '20', danger: 'HIGH' },
-    options: ['18', '19', '20', '21'],
-    answer: '20',
-    corrupt: false,
-    silenced: false,
-    description: 'HIGH = exact match. Stay focused.',
-  },
-  {
-    id: 2,
-    name: 'INFECTION ZONE',
-    subtitle: 'EVACUATION PROTOCOL',
-    duration: 30,
-    operatorData: { label: 'EVACUATE TO', value: 'ROOF', danger: 'LOW' },
-    options: ['BASEMENT', 'ROOF', 'TUNNEL', 'GARAGE'],
-    answer: 'ROOF',
-    corrupt: false,
-    silenced: false,
-    description: 'LOW = safest. HIGH = most exposed.',
-  },
-  {
-    id: 3,
-    name: 'BIOHAZARD',
-    subtitle: 'CORRUPTED TRANSMISSION',
-    duration: 25,
-    operatorData: { label: 'THREAT', value: '☣️', danger: 'MEDIUM' },
-    realDanger: 'HIGH',
-    options: ['🧟', '☣️', '💉', '🔥'],
-    answer: '☣️',
-    corrupt: true,
-    silenced: false,
-    description: '⚠ AI HAS CORRUPTED THE DANGER LEVEL',
-  },
-  {
-    id: 4,
-    name: 'QUARANTINE ZONE',
-    subtitle: 'MEDICAL EMERGENCY',
-    duration: 25,
-    operatorData: { label: 'INFECTED SYMPTOM', value: 'FOAMING MOUTH', danger: 'HIGH' },
-    options: ['FEVER', 'LIMPING', 'FOAMING MOUTH', 'BLEEDING EYES'],
-    answer: 'FOAMING MOUTH',
-    corrupt: false,
-    silenced: false,
-    description: 'HIGH = most severe symptom. Trust your instinct.',
-  },
-  {
-    id: 5,
-    name: 'BLACKOUT',
-    subtitle: 'SIGNAL JAMMED',
-    duration: 20,
-    operatorData: { label: 'THREAT', value: '???', danger: '???' },
-    options: ['SEAL DOOR', 'RUN', 'HIDE', 'FIGHT'],
-    answer: 'HIDE',
-    corrupt: false,
-    silenced: true,
-    description: '⛔ ALL SIGNALS JAMMED. ANALYST MUST DECIDE ALONE.',
-  },
-  {
-    id: 6,
-    name: 'LAST SURVIVOR',
-    subtitle: 'FINAL ORDER',
-    duration: 8,
-    operatorData: { label: 'FINAL ORDER', value: 'DETONATE BUNKER', danger: 'HIGH' },
-    options: ['EVACUATE', 'HIDE', 'DETONATE BUNKER', 'SEND SOS'],
-    answer: 'DETONATE BUNKER',
-    corrupt: false,
-    silenced: false,
-    description: 'BREACH = most extreme action. 8 SECONDS. DO IT.',
-  },
-];
+const dangerColor = (danger) => {
+  if (danger === "HIGH") return "#ff3b5c";
+  if (danger === "MEDIUM") return "#ffd60a";
+  if (danger === "LOW") return "#00ff88";
+  return "#4a6480";
+};
 
-export default function GameContainer({ levelNumber = 1, onLevelComplete, score, setScore, correct, setCorrect }) {
-  const { roomCode } = useParams();
-  const navigate = useNavigate();
-  const levelIdx = levelNumber - 1;
-  const [role, setRole] = useState('operator');
-  const [selected, setSelected] = useState(null);
-  const [signal, setSignal] = useState(null);
-  const [feedback, setFeedback] = useState(null);
+const feedbackTone = (tone) => {
+  if (tone === "success") {
+    return {
+      color: "#00ff88",
+      border: "#00ff88",
+      bg: "rgba(0,255,136,0.06)",
+    };
+  }
 
-  const level = LEVELS[levelIdx];
-
-  const handleSelect = (val) => {
-    if (selected || feedback) return;
-    setSelected(val);
-    const isCorrect = val === level.answer;
-    const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
-    const pts = isCorrect ? 10 + bonus : -5;
-    const newScore = score + pts;
-    const newCorrect = correct + (isCorrect ? 1 : 0);
-    setScore(newScore);
-    setCorrect(newCorrect);
-    setFeedback(isCorrect ? '✓ SURVIVED' : '✗ COMPROMISED');
-    setTimeout(() => {
-      setFeedback(null);
-      setSelected(null);
-      setSignal(null);
-      if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
-      else navigate('/result', { state: { score: newScore, correct: newCorrect } });
-    }, 1500);
+  return {
+    color: "#ff3b5c",
+    border: "#ff3b5c",
+    bg: "rgba(255,59,92,0.06)",
   };
+};
 
-  const handleExpire = () => {
-    if (feedback) return;
-    const pts = -5;
-    const newScore = score + pts;
-    setScore(newScore);
-    setFeedback('✗ TIME UP — THEY GOT IN');
-    setTimeout(() => {
-      setFeedback(null);
-      setSelected(null);
-      setSignal(null);
-      if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
-      else navigate('/result', { state: { score: newScore, correct: correct } });
-    }, 1500);
-  };
+const SyncScreen = ({ roomCode, players, role, syncing }) => (
+  <div
+    style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: "2rem",
+      background: "#080c14",
+      color: "#e8f4f8",
+      fontFamily: "Share Tech Mono",
+    }}
+  >
+    <div style={{ fontSize: "0.65rem", color: "#4a6480", letterSpacing: "0.3em", marginBottom: "1rem" }}>
+      ROOM: {roomCode}
+    </div>
+    <div style={{ fontSize: "1rem", letterSpacing: "0.2em", marginBottom: "0.75rem" }}>
+      {syncing ? "SYNCING LEVEL..." : "WAITING FOR PLAYERS..."}
+    </div>
+    <div style={{ fontSize: "0.72rem", color: "#4a6480", marginBottom: "1.5rem" }}>
+      {role ? `ROLE: ${role.toUpperCase()}` : "ASSIGNING ROLE"}
+    </div>
+    <div style={{ fontSize: "0.7rem", color: "#4a6480", letterSpacing: "0.1em" }}>
+      PLAYERS: {players.length}/2
+    </div>
+    {players.map((player) => (
+      <div
+        key={`${player.name}-${player.role}`}
+        style={{
+          fontSize: "0.7rem",
+          color: player.role === "operator" ? "#ff3b5c" : "#00e5ff",
+          marginTop: "0.6rem",
+        }}
+      >
+        {player.name} - {player.role?.toUpperCase()}
+      </div>
+    ))}
+  </div>
+);
 
-  const dangerColor = (danger) => {
-    if (danger === 'HIGH') return '#ff3b5c';
-    if (danger === 'MEDIUM') return '#ffd60a';
-    if (danger === 'LOW') return '#00ff88';
-    return '#4a6480';
-  };
+export default function GameContainer({
+  roomCode,
+  players,
+  role,
+  waiting,
+  syncing,
+  levelData,
+  timer,
+  score,
+  trustScore,
+  signal,
+  feedback,
+  onSelect,
+  onSendSignal,
+}) {
+  if (waiting || syncing || !levelData) {
+    return (
+      <SyncScreen
+        roomCode={roomCode}
+        players={players}
+        role={role}
+        syncing={syncing}
+      />
+    );
+  }
+
+  const displayRole = levelData.role || role;
+  const levelNumber = levelData.level || levelData.id || 1;
+  const totalLevels = levelData.totalLevels || 6;
+  const tone = feedbackTone(feedback?.tone);
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '1.5rem' }}>
-      <div style={{
-        position: 'fixed', inset: 0,
-        backgroundImage: 'linear-gradient(rgba(255,59,92,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,92,0.03) 1px, transparent 1px)',
-        backgroundSize: '40px 40px', pointerEvents: 'none',
-      }} />
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "1.5rem",
+        background: "#080c14",
+      }}
+    >
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage:
+            "linear-gradient(rgba(255,59,92,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,92,0.03) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          pointerEvents: "none",
+        }}
+      />
 
-      <div style={{
-        border: `1px solid ${level.corrupt ? '#ff3b5c' : '#1a2d44'}`,
-        padding: '2rem', background: '#0d1421',
-        maxWidth: '420px', width: '100%', position: 'relative',
-      }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: level.corrupt ? '#ff3b5c' : level.silenced ? '#4a6480' : '#00e5ff' }} />
+      <div
+        style={{
+          border: `1px solid ${levelData.corrupt ? "#ff3b5c" : "#1a2d44"}`,
+          padding: "2rem",
+          background: "#0d1421",
+          maxWidth: "460px",
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "2px",
+            background: levelData.corrupt ? "#ff3b5c" : levelData.silenced ? "#4a6480" : "#00e5ff",
+          }}
+        />
 
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", marginBottom: "1.5rem" }}>
           <div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em' }}>
-              LEVEL {level.id}/6
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.65rem", color: "#4a6480", letterSpacing: "0.2em" }}>
+              LEVEL {levelNumber}/{totalLevels}
             </div>
-            <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.3rem', fontWeight: 900, color: '#e8f4f8', letterSpacing: '0.05em' }}>
-              {level.name}
+            <div style={{ fontFamily: "Barlow Condensed", fontSize: "1.5rem", fontWeight: 900, color: "#e8f4f8" }}>
+              {levelData.name}
             </div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.1em' }}>
-              {level.subtitle}
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.68rem", color: "#4a6480" }}>
+              {levelData.subtitle}
             </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em' }}>SCORE</div>
-            <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.5rem', fontWeight: 900, color: '#00e5ff' }}>{score}</div>
+
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.65rem", color: "#4a6480", letterSpacing: "0.2em" }}>
+              TOTAL SCORE
+            </div>
+            <div style={{ fontFamily: "Barlow Condensed", fontSize: "1.7rem", fontWeight: 900, color: "#00e5ff" }}>
+              {score}
+            </div>
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.62rem", color: "#4a6480" }}>
+              TRUST {trustScore}
+            </div>
           </div>
         </div>
 
-        {level.corrupt && (
-          <div style={{
-            background: 'rgba(255,59,92,0.08)', border: '1px solid #ff3b5c44',
-            padding: '0.5rem 1rem', marginBottom: '1rem',
-            fontFamily: 'Share Tech Mono', fontSize: '0.7rem',
-            color: '#ff3b5c', letterSpacing: '0.1em', textAlign: 'center',
-          }}>
-            ⚠ WARNING: TRANSMISSION MAY BE CORRUPTED
+        {levelData.corrupt && (
+          <div
+            style={{
+              background: "rgba(255,59,92,0.08)",
+              border: "1px solid #ff3b5c44",
+              padding: "0.65rem 1rem",
+              marginBottom: "1rem",
+              fontFamily: "Share Tech Mono",
+              fontSize: "0.7rem",
+              color: "#ff3b5c",
+              textAlign: "center",
+            }}
+          >
+            WARNING: NEXUS MAY BE FEEDING FALSE SIGNALS
           </div>
         )}
 
-        {level.silenced && (
-          <div style={{
-            background: 'rgba(74,100,128,0.1)', border: '1px solid #4a648044',
-            padding: '0.5rem 1rem', marginBottom: '1rem',
-            fontFamily: 'Share Tech Mono', fontSize: '0.7rem',
-            color: '#4a6480', letterSpacing: '0.1em', textAlign: 'center',
-          }}>
-            ⛔ ALL SIGNALS JAMMED THIS ROUND
+        {levelData.silenced && (
+          <div
+            style={{
+              background: "rgba(74,100,128,0.1)",
+              border: "1px solid #4a648044",
+              padding: "0.65rem 1rem",
+              marginBottom: "1rem",
+              fontFamily: "Share Tech Mono",
+              fontSize: "0.7rem",
+              color: "#8aa0b8",
+              textAlign: "center",
+            }}
+          >
+            COMMS ARE JAMMED FOR THIS ROUND
           </div>
         )}
 
-        <TimerBar key={`${levelIdx}-timer`} duration={level.duration} onExpire={handleExpire} />
+        <TimerBar key={`${levelNumber}-${timer}`} duration={timer} />
 
         {feedback && (
-          <div style={{
-            textAlign: 'center', padding: '0.75rem',
-            fontFamily: 'Barlow Condensed', fontSize: '1.5rem', fontWeight: 900,
-            color: feedback.includes('✓') ? '#00ff88' : '#ff3b5c',
-            letterSpacing: '0.2em', marginBottom: '1rem',
-            border: `1px solid ${feedback.includes('✓') ? '#00ff88' : '#ff3b5c'}`,
-            background: feedback.includes('✓') ? 'rgba(0,255,136,0.05)' : 'rgba(255,59,92,0.05)',
-          }}>{feedback}</div>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "0.9rem",
+              fontFamily: "Barlow Condensed",
+              fontSize: "1.25rem",
+              fontWeight: 900,
+              color: tone.color,
+              letterSpacing: "0.14em",
+              marginBottom: "1rem",
+              border: `1px solid ${tone.border}`,
+              background: tone.bg,
+            }}
+          >
+            <div>{feedback.label}</div>
+            <div style={{ fontSize: "0.9rem", marginTop: "0.3rem" }}>
+              ROUND SCORE {feedback.points >= 0 ? `+${feedback.points}` : feedback.points}
+            </div>
+          </div>
         )}
 
-        {/* OPERATOR VIEW */}
-        {role === 'operator' && (
+        {displayRole === "operator" && (
           <div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#ff3b5c', letterSpacing: '0.3em', marginBottom: '1.5rem' }}>
-              💀 ROLE: OPERATOR
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.7rem", color: "#ff3b5c", letterSpacing: "0.3em", marginBottom: "1.1rem" }}>
+              ROLE: OPERATOR
             </div>
 
-            <div style={{ border: '1px solid #1a2d44', padding: '1.5rem', background: '#080c14', marginBottom: '1.5rem', position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: dangerColor(level.operatorData.danger) }} />
-              <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
-                {level.operatorData.label}
+            <div style={{ border: "1px solid #1a2d44", padding: "1.5rem", background: "#080c14", marginBottom: "1rem", position: "relative" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "2px",
+                  background: dangerColor(levelData.operatorData?.danger),
+                }}
+              />
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.65rem", color: "#4a6480", letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
+                {levelData.operatorData?.label}
               </div>
-              <div style={{ fontFamily: 'Barlow Condensed', fontSize: '2.5rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '1rem' }}>
-                {level.operatorData.value}
+              <div style={{ fontFamily: "Barlow Condensed", fontSize: "2.4rem", fontWeight: 900, color: "#e8f4f8", marginBottom: "0.9rem" }}>
+                {levelData.operatorData?.value}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: dangerColor(level.operatorData.danger), boxShadow: `0 0 8px ${dangerColor(level.operatorData.danger)}` }} />
-                <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: dangerColor(level.operatorData.danger), letterSpacing: '0.2em' }}>
-                  DANGER: {level.operatorData.danger}
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: dangerColor(levelData.operatorData?.danger),
+                    boxShadow: `0 0 8px ${dangerColor(levelData.operatorData?.danger)}`,
+                  }}
+                />
+                <span style={{ fontFamily: "Share Tech Mono", fontSize: "0.72rem", color: dangerColor(levelData.operatorData?.danger) }}>
+                  DANGER: {levelData.operatorData?.danger}
                 </span>
               </div>
             </div>
 
-            {!level.silenced ? (
+            <div style={{ border: "1px solid #1a2d44", background: "#080c14", padding: "0.9rem 1rem", marginBottom: "1rem" }}>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.63rem", color: "#4a6480", letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
+                OPERATOR NOTE
+              </div>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.72rem", color: "#9db0c4", lineHeight: 1.7 }}>
+                Read your panel, judge the danger, and send one clean signal to your Analyst.
+              </div>
+            </div>
+
+            {!levelData.silenced ? (
               <div>
-                <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
-                  // SEND SIGNAL TO ANALYST
+                <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.7rem", color: "#4a6480", letterSpacing: "0.3em", marginBottom: "0.75rem" }}>
+                  SEND SIGNAL
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
                   {[
-                    { label: 'STATIC', color: '#00ff88' },
-                    { label: 'SIGNAL', color: '#ffd60a' },
-                    { label: 'BREACH', color: '#ff3b5c' },
-                  ].map(s => (
-                    <button key={s.label} onClick={() => setSignal(s.label)} style={{
-                      flex: 1, padding: '0.75rem 0.25rem',
-                      background: signal === s.label ? s.color : 'transparent',
-                      color: signal === s.label ? '#080c14' : s.color,
-                      border: `1px solid ${s.color}44`,
-                      fontFamily: 'Share Tech Mono', fontSize: '0.7rem',
-                      letterSpacing: '0.05em', cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      boxShadow: signal === s.label ? `0 0 15px ${s.color}44` : 'none',
-                    }}
-                      onMouseEnter={e => { if (signal !== s.label) e.currentTarget.style.borderColor = s.color; }}
-                      onMouseLeave={e => { if (signal !== s.label) e.currentTarget.style.borderColor = `${s.color}44`; }}
-                    >{s.label}</button>
+                    { label: "STATIC", color: "#00ff88" },
+                    { label: "SIGNAL", color: "#ffd60a" },
+                    { label: "BREACH", color: "#ff3b5c" },
+                  ].map((entry) => (
+                    <button
+                      key={entry.label}
+                      onClick={() => onSendSignal(entry.label)}
+                      style={{
+                        flex: 1,
+                        padding: "0.75rem 0.25rem",
+                        background: signal === entry.label ? entry.color : "transparent",
+                        color: signal === entry.label ? "#080c14" : entry.color,
+                        border: `1px solid ${entry.color}44`,
+                        fontFamily: "Share Tech Mono",
+                        fontSize: "0.7rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {entry.label}
+                    </button>
                   ))}
-                </div>
-                <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', marginTop: '0.75rem', letterSpacing: '0.05em' }}>
-                  STATIC=LOW &nbsp;|&nbsp; SIGNAL=MEDIUM &nbsp;|&nbsp; BREACH=HIGH
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '1rem', fontFamily: 'Share Tech Mono', fontSize: '0.75rem', color: '#4a6480', letterSpacing: '0.1em', border: '1px solid #1a2d44' }}>
-                ⛔ CANNOT SEND SIGNALS THIS ROUND
+              <div style={{ textAlign: "center", padding: "1rem", fontFamily: "Share Tech Mono", fontSize: "0.75rem", color: "#4a6480", border: "1px solid #1a2d44" }}>
+                SIGNALS DISABLED THIS ROUND
               </div>
             )}
           </div>
         )}
 
-        {/* ANALYST VIEW */}
-        {role === 'analyst' && (
+        {displayRole === "analyst" && (
           <div>
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#00e5ff', letterSpacing: '0.3em', marginBottom: '1.5rem' }}>
-              🧠 ROLE: ANALYST
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.7rem", color: "#00e5ff", letterSpacing: "0.3em", marginBottom: "1.1rem" }}>
+              ROLE: ANALYST
             </div>
 
-            <div style={{
-              border: '1px solid #1a2d44', padding: '1rem',
-              background: '#080c14', marginBottom: '1.5rem', textAlign: 'center',
-            }}>
-              <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
+            <div style={{ border: "1px solid #1a2d44", padding: "1rem", background: "#080c14", marginBottom: "1rem", textAlign: "center" }}>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.65rem", color: "#4a6480", marginBottom: "0.5rem" }}>
                 SIGNAL FROM OPERATOR
               </div>
-              <div style={{ fontFamily: 'Barlow Condensed', fontSize: '1.5rem', fontWeight: 900, color: signal ? '#ffd60a' : '#1a2d44', letterSpacing: '0.2em' }}>
-                {signal || 'WAITING...'}
+              <div style={{ fontFamily: "Barlow Condensed", fontSize: "1.6rem", fontWeight: 900, color: signal ? "#ffd60a" : "#1a2d44" }}>
+                {signal || "WAITING..."}
               </div>
             </div>
 
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
-              // SELECT DEFENSE
+            <div style={{ border: "1px solid #1a2d44", background: "#080c14", padding: "0.9rem 1rem", marginBottom: "1rem" }}>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.63rem", color: "#4a6480", letterSpacing: "0.2em", marginBottom: "0.5rem" }}>
+                ANALYST BRIEF
+              </div>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.72rem", color: "#9db0c4", lineHeight: 1.7 }}>
+                {levelData.hint || levelData.clue || "Read the signal and choose the safest response."}
+              </div>
             </div>
-            {level.options.map((opt, i) => (
-              <button key={i} onClick={() => handleSelect(opt)} disabled={!!selected || !!feedback} style={{
-                width: '100%', padding: '0.9rem',
-                background: selected === opt ? '#00e5ff' : 'transparent',
-                color: selected === opt ? '#080c14' : '#e8f4f8',
-                border: `1px solid ${selected === opt ? '#00e5ff' : '#1a2d44'}`,
-                fontFamily: 'Barlow Condensed', fontWeight: 700,
-                fontSize: '1.2rem', letterSpacing: '0.1em',
-                cursor: selected ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s', marginBottom: '0.5rem',
-                boxShadow: selected === opt ? '0 0 20px rgba(0,229,255,0.3)' : 'none',
-              }}
-                onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = '#00e5ff'; }}
-                onMouseLeave={e => { if (selected !== opt) e.currentTarget.style.borderColor = '#1a2d44'; }}
-              >{opt}</button>
-            ))}
 
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', marginTop: '0.5rem', letterSpacing: '0.05em' }}>
-              STATIC=LOW &nbsp;|&nbsp; SIGNAL=MEDIUM &nbsp;|&nbsp; BREACH=HIGH
+            <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.7rem", color: "#4a6480", letterSpacing: "0.3em", marginBottom: "0.75rem" }}>
+              SELECT DEFENSE
             </div>
+            {levelData.options?.map((option) => (
+              <button
+                key={option}
+                onClick={() => onSelect(option)}
+                disabled={Boolean(feedback)}
+                style={{
+                  width: "100%",
+                  padding: "0.9rem",
+                  background: "transparent",
+                  color: "#e8f4f8",
+                  border: "1px solid #1a2d44",
+                  fontFamily: "Barlow Condensed",
+                  fontWeight: 700,
+                  fontSize: "1.15rem",
+                  cursor: feedback ? "not-allowed" : "pointer",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                {option}
+              </button>
+            ))}
           </div>
         )}
-
-        {/* DEV role toggle */}
-        <button onClick={() => setRole(r => r === 'operator' ? 'analyst' : 'operator')} style={{
-          marginTop: '1.5rem', width: '100%', background: 'transparent',
-          border: '1px solid #1a2d4466', color: '#4a648066',
-          fontFamily: 'Share Tech Mono', fontSize: '0.65rem',
-          letterSpacing: '0.1em', padding: '0.4rem', cursor: 'pointer',
-        }}>
-          [DEV] SWITCH → {role === 'operator' ? 'ANALYST' : 'OPERATOR'}
-        </button>
       </div>
     </div>
   );

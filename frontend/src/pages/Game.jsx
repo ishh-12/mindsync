@@ -1,128 +1,234 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import socket from "../services/socket";
 import GameContainer from "../features/game/GameContainer";
 import LevelBriefing from "../features/home/components/LevelBriefing";
 
+const buildHistoryEntry = (payload, type) => ({
+  level: payload.completedLevel ?? payload.level ?? 1,
+  points: payload.points ?? 0,
+  scoreAfter: payload.score ?? 0,
+  correct: Boolean(payload.correct),
+  status:
+    type === "time_up"
+      ? "Time Up"
+      : payload.correct
+        ? "Survived"
+        : "Compromised",
+  selectedOption: payload.selectedOption ?? null,
+  correctAnswer: payload.correctAnswer ?? null,
+});
+
 export default function Game() {
-  // 🔀 ROUTER (multiplayer version)
   const navigate = useNavigate();
   const { roomCode } = useParams();
 
-  // 🎮 SINGLE PLAYER STATES
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [showBriefing, setShowBriefing] = useState(true);
-  const [score, setScore] = useState(0);
-  const [correct, setCorrect] = useState(0);
-
-  // 🌐 MULTIPLAYER STATES
-  const [gameData, setGameData] = useState({});
+  const [players, setPlayers] = useState([]);
+  const [role, setRole] = useState("");
+  const [waiting, setWaiting] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [showBriefing, setShowBriefing] = useState(false);
+  const [pendingLevel, setPendingLevel] = useState(null);
+  const [activeLevel, setActiveLevel] = useState(null);
   const [timer, setTimer] = useState(0);
+  const [score, setScore] = useState(0);
+  const [trustScore, setTrustScore] = useState(0);
   const [signal, setSignal] = useState("");
-  const [result, setResult] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [history, setHistory] = useState([]);
+  const historyRef = useRef([]);
 
-  // 🔥 START FIRST LEVEL (multiplayer)
   useEffect(() => {
-    if (roomCode) {
-      socket.emit("start_level", { roomCode });
-    }
-  }, [roomCode]);
+    historyRef.current = history;
+  }, [history]);
 
-  // 🔥 SOCKET LISTENERS (multiplayer)
+  const appendHistory = (entry) => {
+    const nextHistory = [...historyRef.current, entry];
+    historyRef.current = nextHistory;
+    setHistory(nextHistory);
+  };
+
   useEffect(() => {
     if (!roomCode) return;
 
-    socket.on("level_data", (data) => {
-      console.log("LEVEL DATA:", data);
-      setGameData(data);
-    });
+    const playerName = localStorage.getItem("playerName") || "Player";
+    socket.emit("join_room", { roomCode, name: playerName });
 
-    socket.on("timer_start", (data) => {
-      console.log("TIMER:", data);
-      setTimer(data.time);
-    });
+    const onRoleAssigned = ({ role: assignedRole }) => {
+      setRole(assignedRole || "");
+    };
 
-    socket.on("receive_signal", (signal) => {
-      console.log("SIGNAL:", signal);
-      setSignal(signal);
-    });
+    const onRoomUpdate = (data) => {
+      setPlayers(data.players || []);
+      if ((data.players || []).length >= 2) {
+        setWaiting(false);
+      }
+    };
 
-    socket.on("result", (res) => {
-      console.log("RESULT:", res);
-      setResult(res);
+    const onGameStarted = (data) => {
+      setPlayers(data.players || []);
+      setWaiting(false);
+      setSyncing(false);
+      setShowBriefing(false);
+      setPendingLevel(null);
+      setActiveLevel(null);
+      setTimer(0);
+      setScore(0);
+      setTrustScore(0);
+      setSignal("");
+      setFeedback(null);
+      setHistory([]);
+    };
 
-      setTimeout(() => {
-        socket.emit("start_level", { roomCode });
-      }, 1500);
-    });
+    const onLevelIntro = (data) => {
+      setRole(data.role || "");
+      setPendingLevel(data);
+      setActiveLevel(null);
+      setTimer(data.duration || 0);
+      setSignal("");
+      setFeedback(null);
+      setWaiting(false);
+      setSyncing(false);
+      setShowBriefing(true);
+    };
 
-    socket.on("time_up", (data) => {
-      console.log("TIME UP:", data);
+    const onLevelSync = () => {
+      setSyncing(true);
+    };
 
-      setTimeout(() => {
-        socket.emit("start_level", { roomCode });
-      }, 1500);
-    });
+    const onLevelData = (data) => {
+      setRole(data.role || "");
+      setActiveLevel(data);
+      setTimer(data.duration || 0);
+      setSignal("");
+      setFeedback(null);
+      setSyncing(false);
+    };
 
-    socket.on("game_over", (data) => {
-      console.log("GAME OVER:", data);
-      navigate("/result", { state: data });
-    });
+    const onTimerStart = ({ time }) => {
+      setTimer(time || 0);
+    };
+
+    const onReceiveSignal = (nextSignal) => {
+      setSignal(nextSignal || "");
+    };
+
+    const onResult = (payload) => {
+      setScore(payload.score ?? 0);
+      setTrustScore(payload.trustScore ?? 0);
+      setSignal("");
+      setFeedback({
+        label: payload.correct ? "MISSION SUCCESS" : "MISSION FAILED",
+        points: payload.points ?? 0,
+        tone: payload.correct ? "success" : "danger",
+      });
+      appendHistory(buildHistoryEntry(payload, "result"));
+    };
+
+    const onTimeUp = (payload) => {
+      setScore(payload.score ?? 0);
+      setTrustScore(payload.trustScore ?? 0);
+      setSignal("");
+      setFeedback({
+        label: payload.message || "TIME UP",
+        points: payload.points ?? -5,
+        tone: "danger",
+      });
+      appendHistory(buildHistoryEntry(payload, "time_up"));
+    };
+
+    const onGameOver = (payload) => {
+      const finalHistory = historyRef.current;
+      navigate("/result", {
+        state: {
+          score: payload.score ?? 0,
+          trustScore: payload.trustScore ?? 0,
+          players: payload.players || [],
+          leaderboard: payload.leaderboard || [],
+          history: finalHistory,
+          correct: finalHistory.filter((entry) => entry.correct).length,
+        },
+      });
+    };
+
+    const onError = (message) => {
+      alert(message);
+    };
+
+    socket.on("role_assigned", onRoleAssigned);
+    socket.on("room_update", onRoomUpdate);
+    socket.on("game_started", onGameStarted);
+    socket.on("level_intro", onLevelIntro);
+    socket.on("level_sync", onLevelSync);
+    socket.on("level_data", onLevelData);
+    socket.on("timer_start", onTimerStart);
+    socket.on("receive_signal", onReceiveSignal);
+    socket.on("result", onResult);
+    socket.on("time_up", onTimeUp);
+    socket.on("game_over", onGameOver);
+    socket.on("error", onError);
 
     return () => {
-      socket.off("level_data");
-      socket.off("timer_start");
-      socket.off("receive_signal");
-      socket.off("result");
-      socket.off("time_up");
-      socket.off("game_over");
+      socket.off("role_assigned", onRoleAssigned);
+      socket.off("room_update", onRoomUpdate);
+      socket.off("game_started", onGameStarted);
+      socket.off("level_intro", onLevelIntro);
+      socket.off("level_sync", onLevelSync);
+      socket.off("level_data", onLevelData);
+      socket.off("timer_start", onTimerStart);
+      socket.off("receive_signal", onReceiveSignal);
+      socket.off("result", onResult);
+      socket.off("time_up", onTimeUp);
+      socket.off("game_over", onGameOver);
+      socket.off("error", onError);
     };
-  }, [roomCode, navigate]);
+  }, [navigate, roomCode]);
 
-  // 🎮 SINGLE PLAYER HANDLERS
   const handleBriefingComplete = () => {
+    if (!roomCode || !pendingLevel) return;
     setShowBriefing(false);
+    setSyncing(true);
+    socket.emit("ready_for_level", {
+      roomCode,
+      level: pendingLevel.level,
+    });
   };
 
-  const handleLevelComplete = (nextLevel) => {
-    if (nextLevel <= 6) {
-      setCurrentLevel(nextLevel);
-      setShowBriefing(true);
-    }
+  const handleSelect = (option) => {
+    if (!roomCode || !activeLevel || feedback) return;
+    socket.emit("select_option", { roomCode, option });
   };
 
-  // 🎯 RENDER LOGIC
-  if (roomCode) {
-    // 🌐 MULTIPLAYER MODE
+  const handleSendSignal = (nextSignal) => {
+    if (!roomCode || !activeLevel || activeLevel.silenced) return;
+    setSignal(nextSignal);
+    socket.emit("send_signal", { roomCode, signal: nextSignal });
+  };
+
+  if (showBriefing && pendingLevel) {
     return (
-      <GameContainer
-        gameData={gameData}
-        timer={timer}
-        signal={signal}
-        result={result}
-        roomCode={roomCode}
+      <LevelBriefing
+        levelNumber={pendingLevel.level}
+        onComplete={handleBriefingComplete}
       />
     );
   }
 
-  // 🎮 SINGLE PLAYER MODE
   return (
-    <>
-      {showBriefing ? (
-        <LevelBriefing
-          levelNumber={currentLevel}
-          onComplete={handleBriefingComplete}
-        />
-      ) : (
-        <GameContainer
-          levelNumber={currentLevel}
-          onLevelComplete={handleLevelComplete}
-          score={score}
-          setScore={setScore}
-          correct={correct}
-          setCorrect={setCorrect}
-        />
-      )}
-    </>
+    <GameContainer
+      roomCode={roomCode}
+      players={players}
+      role={activeLevel?.role || pendingLevel?.role || role}
+      waiting={waiting}
+      syncing={syncing}
+      levelData={activeLevel || pendingLevel}
+      timer={timer}
+      score={score}
+      trustScore={trustScore}
+      signal={signal}
+      feedback={feedback}
+      onSelect={handleSelect}
+      onSendSignal={handleSendSignal}
+    />
   );
 }

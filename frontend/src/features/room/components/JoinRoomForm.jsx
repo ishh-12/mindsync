@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRoomAPI } from '../../../services/api';
+import { joinRoomAPI } from '../../../services/api';
 
 export default function JoinRoomForm() {
   const [name, setName] = useState('');
@@ -13,9 +13,10 @@ export default function JoinRoomForm() {
     setLoading(true);
 
     const roomCode = code.toUpperCase();
-    const data = await getRoomAPI(roomCode);
+    const data = await joinRoomAPI(roomCode, name.trim());
 
     if (data.success) {
+      localStorage.setItem('playerName', name.trim());
       navigate(`/lobby/${roomCode}?name=${encodeURIComponent(name.trim())}&host=false`);
       return;
     }
