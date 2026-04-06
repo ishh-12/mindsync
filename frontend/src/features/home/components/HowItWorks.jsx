@@ -16,7 +16,7 @@ export default function HowItWorks() {
       {/* Section label */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
         <div style={{ width: '40px', height: '1px', background: '#00ff41' }}/>
-        <span style={{ fontFamily: 'Share Tech Mono', color: '#005514', fontSize: '0.68rem', letterSpacing: '0.3em' }}>// OPERATIONAL PROTOCOL</span>
+        <span style={{ fontFamily: 'Share Tech Mono', color: '#005514', fontSize: '0.68rem', letterSpacing: '0.3em' }}>{'// OPERATIONAL PROTOCOL'}</span>
         <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,#00ff4133,transparent)' }}/>
       </div>
 

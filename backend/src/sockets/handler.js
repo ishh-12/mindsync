@@ -4,6 +4,7 @@ const LeaderboardEntry = require("../models/LeaderboardEntry");
 const timeoutMap = {};
 const introTimeoutMap = {};
 const readinessMap = {};
+const roomLocks = new Map();
 
 const LEVELS = [
   {
@@ -95,6 +96,26 @@ const clearReadiness = (code) => {
   delete readinessMap[code];
 };
 
+const withRoomLock = async (code, work) => {
+  const previous = roomLocks.get(code) || Promise.resolve();
+  let release;
+  const current = new Promise((resolve) => {
+    release = resolve;
+  });
+  roomLocks.set(code, previous.then(() => current));
+
+  await previous;
+
+  try {
+    return await work();
+  } finally {
+    release();
+    if (roomLocks.get(code) === current) {
+      roomLocks.delete(code);
+    }
+  }
+};
+
 const getLeaderboardSnapshot = async () => {
   return LeaderboardEntry.find()
     .sort({ bestScore: -1, totalScore: -1, gamesPlayed: -1, name: 1 })
@@ -177,59 +198,62 @@ const handleSocket = (io, socket) => {
         return socket.emit('error', 'roomCode and name are required');
       }
 
-      const room = await Room.findOne({ roomCode: code });
-      if (!room) {
-        return socket.emit('error', 'Room not found');
-      }
+      await withRoomLock(code, async () => {
+        const room = await Room.findOne({ roomCode: code });
+        if (!room) {
+          socket.emit('error', 'Room not found');
+          return;
+        }
 
-      const existingBySocket = room.players.find((p) => p.socketId === socket.id);
-      if (existingBySocket) {
-        socket.join(code);
-        socket.emit('role_assigned', { role: existingBySocket.role });
-        io.to(code).emit('room_update', {
-          roomCode: code,
-          players: serializePlayers(room.players),
-          status: room.status,
-        });
-        return;
-      }
+        const existingBySocket = room.players.find((p) => p.socketId === socket.id);
+        if (existingBySocket) {
+          socket.join(code);
+          socket.emit('role_assigned', { role: existingBySocket.role });
+          io.to(code).emit('room_update', {
+            roomCode: code,
+            players: serializePlayers(room.players),
+            status: room.status,
+          });
+          return;
+        }
 
-      const existingByName = room.players.find(
-        (p) => p.name?.toLowerCase() === playerName.toLowerCase()
-      );
-      if (existingByName) {
-        existingByName.socketId = socket.id;
+        const existingByName = room.players.find(
+          (p) => p.name?.toLowerCase() === playerName.toLowerCase()
+        );
+        if (existingByName) {
+          existingByName.socketId = socket.id;
+          await room.save();
+          socket.join(code);
+          socket.emit('role_assigned', { role: existingByName.role });
+          io.to(code).emit('room_update', {
+            roomCode: code,
+            players: serializePlayers(room.players),
+            status: room.status,
+          });
+          return;
+        }
+
+        if (room.players.length >= 2) {
+          socket.emit('error', 'Room is full');
+          return;
+        }
+
+        const role = room.players.length === 0 ? 'analyst' : 'operator';
+        room.players.push({ socketId: socket.id, name: playerName, role });
         await room.save();
+
         socket.join(code);
-        socket.emit('role_assigned', { role: existingByName.role });
+        socket.emit('role_assigned', { role });
         io.to(code).emit('room_update', {
           roomCode: code,
           players: serializePlayers(room.players),
           status: room.status,
         });
-        return;
-      }
 
-      if (room.players.length >= 2) {
-        return socket.emit('error', 'Room is full');
-      }
-
-      // First player = analyst, second = operator
-      const role = room.players.length === 0 ? 'analyst' : 'operator';
-      room.players.push({ socketId: socket.id, name: playerName, role });
-      await room.save();
-
-      socket.join(code);
-      socket.emit('role_assigned', { role });
-      io.to(code).emit('room_update', {
-        roomCode: code,
-        players: serializePlayers(room.players),
-        status: room.status,
+        if (room.players.length === 2) {
+          io.to(code).emit('ready_to_start', { roomCode: code });
+        }
       });
-
-      if (room.players.length === 2) {
-        io.to(code).emit('ready_to_start', { roomCode: code });
-      }
 
     } catch (err) {
       console.error('[JOIN ERROR]', err.message);

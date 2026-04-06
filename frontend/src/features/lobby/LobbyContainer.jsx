@@ -59,7 +59,7 @@ export default function LobbyContainer() {
       socket.off('game_started', onGameStarted);
       socket.off('error', onError);
     };
-  }, [roomCode, name, navigate]);
+  }, [roomCode, name, navigate, isHost]);
 
   const handleStart = () => {
     console.log('START GAME EMIT:', { roomCode, name });
