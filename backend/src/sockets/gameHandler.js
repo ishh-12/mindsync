@@ -10,28 +10,35 @@ const persistLeaderboard = async (room) => {
   }
 
   const score = room.score || 0;
+  const teamMembers = [...new Set(
+    (room.players || [])
+      .map((player) => player?.name?.trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b));
 
-  for (const player of room.players || []) {
-    if (!player.name) continue;
-
-    await LeaderboardEntry.findOneAndUpdate(
-      { name: player.name },
-      {
-        $inc: {
-          totalScore: score,
-          gamesPlayed: 1,
-        },
-        $max: {
-          bestScore: score,
-        },
-      },
-      {
-        upsert: true,
-        new: true,
-        setDefaultsOnInsert: true,
-      }
-    );
+  if (teamMembers.length === 0) {
+    return;
   }
+
+  const teamName = teamMembers.join(" + ");
+
+  await LeaderboardEntry.findOneAndUpdate(
+    { name: teamName },
+    {
+      $inc: {
+        totalScore: score,
+        gamesPlayed: 1,
+      },
+      $max: {
+        bestScore: score,
+      },
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    }
+  );
 
   room.status = "finished";
   await room.save();
@@ -66,9 +73,14 @@ const handleGameSockets = (io, socket) => {
         role: player.role,
       })));
 
-      const levelData = generateLevelData(room.level);
-      const finalData = applyAIDeception(levelData, room.level);
+      // 🎯 generate base level
+const levelData = generateLevelData(room.level);
 
+// 🤖 apply smart AI
+const finalData = applyAIDeception(levelData, room.level, room);
+
+// 🧠 DEBUG
+console.log(`LEVEL ${room.level} | AI TRAP:`, finalData.trap);
       room.currentAnswer = levelData.correctAnswer;
       await room.save();
 
@@ -80,12 +92,19 @@ const handleGameSockets = (io, socket) => {
       io.to(normalizedRoomCode).emit("timer_start", {
         time: timeLimit,
       });
+      //
+      if(room.timeoutId){
+        clearTimeout(room.timeoutId);
+      }
 
-      setTimeout(async () => {
+      room.timeoutId = setTimeout(async () => {
         try {
           const updatedRoom = await Room.findOne({ roomCode: normalizedRoomCode });
-
+//clear previous timeout
           if (!updatedRoom || updatedRoom.currentAnswer == null) return;
+
+// 🧠 prevent double execution
+if (updatedRoom.level !== room.level) return;
 
           updatedRoom.score = (updatedRoom.score || 0) - 5;
           updatedRoom.currentAnswer = null;
@@ -108,11 +127,13 @@ const handleGameSockets = (io, socket) => {
           console.error("TIMEOUT ERROR:", timeoutError.message);
         }
       }, timeLimit * 1000);
+      await room.save();
 
       room.players.forEach((player) => {
         if (player.role === "analyst") {
           io.to(player.socketId).emit("level_data", {
             clue: finalData.clue,
+            isCorrupted: finalData.isClueCorrupted,
             role: "analyst",
             level: room.level,
           });
@@ -121,6 +142,7 @@ const handleGameSockets = (io, socket) => {
         if (player.role === "operator") {
           io.to(player.socketId).emit("level_data", {
             options: finalData.options,
+            isCorrupted: finalData.areOptionsCorrupted,
             role: "operator",
             level: room.level,
           });
@@ -148,41 +170,70 @@ const handleGameSockets = (io, socket) => {
   });
 
   socket.on("select_option", async ({ roomCode, option }) => {
-    try {
-      const normalizedRoomCode = roomCode?.trim()?.toUpperCase();
-      const room = await Room.findOne({ roomCode: normalizedRoomCode });
+  try {
+    const normalizedRoomCode = roomCode?.trim()?.toUpperCase();
+    const room = await Room.findOne({ roomCode: normalizedRoomCode });
 
-      if (!room) {
-        return socket.emit("error", "Room not found");
-      }
-
-      const correctAnswer = room.currentAnswer;
-      const isCorrect = option === correctAnswer;
-      room.score = room.score || 0;
-      room.score += isCorrect ? 10 : -5;
-      room.currentAnswer = null;
-      room.level = (room.level || 1) + 1;
-
-      if (room.level > 6) {
-        await room.save();
-        await persistLeaderboard(room);
-        return io.to(normalizedRoomCode).emit("game_over", {
-          score: room.score,
-        });
-      }
-
-      await room.save();
-
-      io.to(normalizedRoomCode).emit("result", {
-        correct: isCorrect,
-        score: room.score,
-        level: room.level,
-      });
-    } catch (error) {
-      console.error("GAME ERROR:", error.message);
-      socket.emit("error", "Error selecting option");
+    if (!room) {
+      return socket.emit("error", "Room not found");
     }
-  });
+
+    const correctAnswer = room.currentAnswer;
+    const isCorrect = Number(option) === Number(correctAnswer);
+
+    // 🧠 INIT DEFAULTS
+    room.score = room.score || 0;
+    room.trustScore = room.trustScore || 0;
+    room.lastChoices = room.lastChoices || [];
+
+    // 🎯 SCORE UPDATE
+    room.score += isCorrect ? 10 : -5;
+
+    // 🧠 TRACK TRUST BEHAVIOR
+    if (isCorrect) {
+      room.trustScore += 1;
+    } else {
+      room.trustScore -= 1;
+    }
+
+    // 🧠 TRACK LAST CHOICES (pattern detection)
+    room.lastChoices.push(option);
+    if (room.lastChoices.length > 3) {
+      room.lastChoices.shift();
+    }
+
+    // 🔄 RESET CURRENT ANSWER
+    room.currentAnswer = null;
+
+    // ⬆️ LEVEL UP
+    room.level = (room.level || 1) + 1;
+
+    // 🏁 GAME OVER
+    if (room.level > 6) {
+      await room.save();
+      await persistLeaderboard(room);
+
+      return io.to(normalizedRoomCode).emit("game_over", {
+        score: room.score,
+      });
+    }
+
+    await room.save();
+
+    // 📤 SEND RESULT
+    io.to(normalizedRoomCode).emit("result", {
+      correct: isCorrect,
+      score: room.score,
+      level: room.level,
+      trustScore: room.trustScore, // optional (for debugging)
+    });
+
+  } catch (error) {
+    console.error("GAME ERROR:", error.message);
+    socket.emit("error", "Error selecting option");
+  }
+});
+
 };
 
 module.exports = handleGameSockets;

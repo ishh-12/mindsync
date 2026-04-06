@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import TimerBar from './components/TimerBar';
-import AnalystView from './components/AnalystView';
-import OperatorView from './components/OperatorView';
 
 const LEVELS = [
   {
@@ -92,39 +90,39 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
   const level = LEVELS[levelIdx];
 
   const handleSelect = (val) => {
-  if (selected || feedback) return;
-  setSelected(val);
-  const isCorrect = val === level.answer;
-  const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
-  const pts = isCorrect ? 10 + bonus : -5;
-  const newScore = score + pts;
-  const newCorrect = correct + (isCorrect ? 1 : 0);  // calculate directly
-  setScore(newScore);
-  setCorrect(newCorrect);
-  setFeedback(isCorrect ? '✓ SURVIVED' : '✗ COMPROMISED');
-  setTimeout(() => {
-    setFeedback(null);
-    setSelected(null);
-    setSignal(null);
-    if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
-    else navigate('/result', { state: { score: newScore, correct: newCorrect } }); // use newCorrect
-  }, 1500);
-};
+    if (selected || feedback) return;
+    setSelected(val);
+    const isCorrect = val === level.answer;
+    const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
+    const pts = isCorrect ? 10 + bonus : -5;
+    const newScore = score + pts;
+    const newCorrect = correct + (isCorrect ? 1 : 0);
+    setScore(newScore);
+    setCorrect(newCorrect);
+    setFeedback(isCorrect ? '✓ SURVIVED' : '✗ COMPROMISED');
+    setTimeout(() => {
+      setFeedback(null);
+      setSelected(null);
+      setSignal(null);
+      if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
+      else navigate('/result', { state: { score: newScore, correct: newCorrect } });
+    }, 1500);
+  };
 
   const handleExpire = () => {
-  if (feedback) return;
-  const pts = -5;
-  const newScore = score + pts;
-  setScore(newScore);
-  setFeedback('✗ TIME UP — THEY GOT IN');
-  setTimeout(() => {
-    setFeedback(null);
-    setSelected(null);
-    setSignal(null);
-    if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
-    else navigate('/result', { state: { score: newScore, correct: correct } });
-  }, 1500);
-};
+    if (feedback) return;
+    const pts = -5;
+    const newScore = score + pts;
+    setScore(newScore);
+    setFeedback('✗ TIME UP — THEY GOT IN');
+    setTimeout(() => {
+      setFeedback(null);
+      setSelected(null);
+      setSignal(null);
+      if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
+      else navigate('/result', { state: { score: newScore, correct: correct } });
+    }, 1500);
+  };
 
   const dangerColor = (danger) => {
     if (danger === 'HIGH') return '#ff3b5c';
@@ -135,7 +133,6 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '1.5rem' }}>
-      {/* Background */}
       <div style={{
         position: 'fixed', inset: 0,
         backgroundImage: 'linear-gradient(rgba(255,59,92,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,59,92,0.03) 1px, transparent 1px)',
@@ -147,7 +144,6 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
         padding: '2rem', background: '#0d1421',
         maxWidth: '420px', width: '100%', position: 'relative',
       }}>
-        {/* Top accent line */}
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: level.corrupt ? '#ff3b5c' : level.silenced ? '#4a6480' : '#00e5ff' }} />
 
         {/* Header */}
@@ -169,7 +165,6 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
           </div>
         </div>
 
-        {/* Corruption warning */}
         {level.corrupt && (
           <div style={{
             background: 'rgba(255,59,92,0.08)', border: '1px solid #ff3b5c44',
@@ -181,7 +176,6 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
           </div>
         )}
 
-        {/* Silenced warning */}
         {level.silenced && (
           <div style={{
             background: 'rgba(74,100,128,0.1)', border: '1px solid #4a648044',
@@ -195,7 +189,6 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
 
         <TimerBar key={`${levelIdx}-timer`} duration={level.duration} onExpire={handleExpire} />
 
-        {/* Feedback */}
         {feedback && (
           <div style={{
             textAlign: 'center', padding: '0.75rem',
@@ -277,8 +270,7 @@ export default function GameContainer({ levelNumber = 1, onLevelComplete, score,
 
             <div style={{
               border: '1px solid #1a2d44', padding: '1rem',
-              background: '#080c14', marginBottom: '1.5rem',
-              textAlign: 'center',
+              background: '#080c14', marginBottom: '1.5rem', textAlign: 'center',
             }}>
               <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
                 SIGNAL FROM OPERATOR
