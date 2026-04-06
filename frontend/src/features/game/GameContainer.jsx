@@ -80,47 +80,51 @@ const LEVELS = [
   },
 ];
 
-export default function GameContainer() {
+export default function GameContainer({ levelNumber = 1, onLevelComplete, score, setScore, correct, setCorrect }) {
   const { roomCode } = useParams();
   const navigate = useNavigate();
-  const [levelIdx, setLevelIdx] = useState(0);
+  const levelIdx = levelNumber - 1;
   const [role, setRole] = useState('operator');
   const [selected, setSelected] = useState(null);
-  const [score, setScore] = useState(0);
   const [signal, setSignal] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   const level = LEVELS[levelIdx];
 
   const handleSelect = (val) => {
-    if (selected || feedback) return;
-    setSelected(val);
-    const correct = val === level.answer;
-    const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
-    const pts = correct ? 10 + bonus : -5;
-    setScore(s => s + pts);
-    setFeedback(correct ? '✓ SURVIVED' : '✗ COMPROMISED');
-    setTimeout(() => {
-      setFeedback(null);
-      setSelected(null);
-      setSignal(null);
-      if (levelIdx < LEVELS.length - 1) setLevelIdx(i => i + 1);
-      else navigate('/result', { state: { score: score + pts } });
-    }, 1500);
-  };
+  if (selected || feedback) return;
+  setSelected(val);
+  const isCorrect = val === level.answer;
+  const bonus = levelIdx === 4 ? 15 : levelIdx === 5 ? 20 : 0;
+  const pts = isCorrect ? 10 + bonus : -5;
+  const newScore = score + pts;
+  const newCorrect = correct + (isCorrect ? 1 : 0);  // calculate directly
+  setScore(newScore);
+  setCorrect(newCorrect);
+  setFeedback(isCorrect ? '✓ SURVIVED' : '✗ COMPROMISED');
+  setTimeout(() => {
+    setFeedback(null);
+    setSelected(null);
+    setSignal(null);
+    if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
+    else navigate('/result', { state: { score: newScore, correct: newCorrect } }); // use newCorrect
+  }, 1500);
+};
 
   const handleExpire = () => {
-    if (feedback) return;
-    setScore(s => s - 5);
-    setFeedback('✗ TIME UP — THEY GOT IN');
-    setTimeout(() => {
-      setFeedback(null);
-      setSelected(null);
-      setSignal(null);
-      if (levelIdx < LEVELS.length - 1) setLevelIdx(i => i + 1);
-      else navigate('/result', { state: { score: score - 5 } });
-    }, 1500);
-  };
+  if (feedback) return;
+  const pts = -5;
+  const newScore = score + pts;
+  setScore(newScore);
+  setFeedback('✗ TIME UP — THEY GOT IN');
+  setTimeout(() => {
+    setFeedback(null);
+    setSelected(null);
+    setSignal(null);
+    if (levelIdx < LEVELS.length - 1) onLevelComplete(levelNumber + 1);
+    else navigate('/result', { state: { score: newScore, correct: correct } });
+  }, 1500);
+};
 
   const dangerColor = (danger) => {
     if (danger === 'HIGH') return '#ff3b5c';
@@ -210,7 +214,6 @@ export default function GameContainer() {
               💀 ROLE: OPERATOR
             </div>
 
-            {/* Threat card */}
             <div style={{ border: '1px solid #1a2d44', padding: '1.5rem', background: '#080c14', marginBottom: '1.5rem', position: 'relative' }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: dangerColor(level.operatorData.danger) }} />
               <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em', marginBottom: '0.5rem' }}>
@@ -227,7 +230,6 @@ export default function GameContainer() {
               </div>
             </div>
 
-            {/* Signal buttons */}
             {!level.silenced ? (
               <div>
                 <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
@@ -273,7 +275,6 @@ export default function GameContainer() {
               🧠 ROLE: ANALYST
             </div>
 
-            {/* Signal received */}
             <div style={{
               border: '1px solid #1a2d44', padding: '1rem',
               background: '#080c14', marginBottom: '1.5rem',
@@ -287,7 +288,6 @@ export default function GameContainer() {
               </div>
             </div>
 
-            {/* Options */}
             <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.3em', marginBottom: '0.75rem' }}>
               // SELECT DEFENSE
             </div>
