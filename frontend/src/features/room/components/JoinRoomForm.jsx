@@ -17,6 +17,7 @@ export default function JoinRoomForm() {
 
     if (data.success) {
       localStorage.setItem('playerName', name.trim());
+      localStorage.setItem('playerToken', data.token);
       navigate(`/lobby/${roomCode}?name=${encodeURIComponent(name.trim())}&host=false`);
       return;
     }
@@ -29,9 +30,11 @@ export default function JoinRoomForm() {
 
   return (
     <div style={{
-      border: '1px solid #1a2d44', padding: '2.5rem',
-      background: '#0d1421', maxWidth: '420px', width: '100%',
+      border: '1px solid #1a2d44', padding: '1.5rem',
+      background: '#0d1421', width: 'min(100%, 360px)',
       position: 'relative',
+      minWidth: 0,
+      borderRadius: '14px',
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#ff3b5c' }} />
 
@@ -39,12 +42,12 @@ export default function JoinRoomForm() {
         {'// ACCESS ROOM'}
       </div>
       <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
-        JOIN ROOM
+        JOIN ROOM 🎯
       </h2>
 
       {[
         { label: 'YOUR CALLSIGN', val: name, set: setName, ph: 'ENTER NAME...', max: 16 },
-        { label: 'ROOM CODE', val: code, set: value => setCode(value.toUpperCase()), ph: 'ENTER CODE...', max: 6 },
+        { label: 'ROOM CODE', val: code, set: value => setCode(value.toUpperCase()), ph: 'ENTER CODE... 🔐', max: 6 },
       ].map((f, i) => (
         <div key={i} style={{ marginBottom: '1.5rem' }}>
           <label style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.2em', display: 'block', marginBottom: '0.5rem' }}>
@@ -83,7 +86,7 @@ export default function JoinRoomForm() {
           boxShadow: canJoin ? '0 0 20px rgba(255,59,92,0.3)' : 'none',
         }}
       >
-        {loading ? 'CONNECTING...' : 'JOIN ROOM ->'}
+        {loading ? 'CONNECTING... ⚡' : 'JOIN ROOM -> 🎮'}
       </button>
     </div>
   );

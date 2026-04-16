@@ -1,4 +1,5 @@
 const Room = require("../models/Room");
+const { generatePlayerToken } = require("../utils/playerAuth");
 
 const serializeRoom = (room) => ({
   roomCode: room.roomCode,
@@ -25,6 +26,13 @@ const generateRoomCode = () => {
 
 const createRoom = async (req, res) => {
   try {
+    const { playerName, name } = req.body || {};
+    const resolvedName = playerName ?? name;
+
+    if (!resolvedName?.trim()) {
+      return res.status(400).json({ success: false, message: "Name required" });
+    }
+
     let roomCode = generateRoomCode();
     let exists = await Room.findOne({ roomCode });
     while (exists) {
@@ -35,7 +43,11 @@ const createRoom = async (req, res) => {
     const room = new Room({ roomCode, players: [], status: 'waiting' });
     await room.save();
 
-    res.json({ success: true, roomCode });
+    res.json({
+      success: true,
+      roomCode,
+      token: generatePlayerToken({ roomCode, name: resolvedName.trim() }),
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -64,6 +76,7 @@ const joinRoom = async (req, res) => {
       success: true,
       room: serializeRoom(room),
       role: room.players.length === 0 ? 'analyst' : 'operator',
+      token: generatePlayerToken({ roomCode: code, name: resolvedName.trim() }),
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

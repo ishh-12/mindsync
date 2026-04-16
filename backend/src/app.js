@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const { corsOptions } = require("./config/cors");
 
 const roomRoutes = require("./routes/roomRoutes");
 const leaderboardRoutes = require("./routes/leaderboardRoutes");
@@ -19,7 +20,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(cors({ origin: "*" }));
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use((req, res, next) => {

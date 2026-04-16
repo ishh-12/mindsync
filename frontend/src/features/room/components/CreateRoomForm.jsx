@@ -11,10 +11,11 @@ export default function CreateRoomForm() {
     if (!name.trim()) return;
     setLoading(true);
 
-    const data = await createRoom();
+    const data = await createRoom(name.trim());
 
     if (data.success) {
       localStorage.setItem('playerName', name.trim());
+      localStorage.setItem('playerToken', data.token);
       navigate(`/lobby/${data.roomCode}?name=${encodeURIComponent(name.trim())}&host=true`);
       return;
     }
@@ -25,9 +26,11 @@ export default function CreateRoomForm() {
 
   return (
     <div style={{
-      border: '1px solid #1a2d44', padding: '2.5rem',
-      background: '#0d1421', maxWidth: '420px', width: '100%',
+      border: '1px solid #1a2d44', padding: '1.5rem',
+      background: '#0d1421', width: 'min(100%, 360px)',
       position: 'relative',
+      minWidth: 0,
+      borderRadius: '14px',
     }}>
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00e5ff' }} />
 
@@ -35,7 +38,7 @@ export default function CreateRoomForm() {
         {'// INITIALIZE ROOM'}
       </div>
       <h2 style={{ fontFamily: 'Barlow Condensed', fontSize: '2rem', fontWeight: 900, color: '#e8f4f8', marginBottom: '2rem' }}>
-        CREATE ROOM
+        CREATE ROOM 🚀
       </h2>
 
       <label style={{ fontFamily: 'Share Tech Mono', fontSize: '0.7rem', color: '#4a6480', letterSpacing: '0.2em', display: 'block', marginBottom: '0.5rem' }}>
@@ -45,7 +48,7 @@ export default function CreateRoomForm() {
         value={name}
         onChange={e => setName(e.target.value)}
         onKeyDown={e => e.key === 'Enter' && handleCreate()}
-        placeholder="ENTER NAME..."
+        placeholder="ENTER NAME... 😎"
         maxLength={16}
         style={{
           width: '100%', background: '#080c14',
@@ -72,7 +75,7 @@ export default function CreateRoomForm() {
           boxShadow: name.trim() ? '0 0 20px rgba(0,229,255,0.3)' : 'none',
         }}
       >
-        {loading ? 'INITIALIZING...' : 'CREATE ROOM ->'}
+        {loading ? 'INITIALIZING... ⚡' : 'CREATE ROOM -> 🎉'}
       </button>
     </div>
   );

@@ -3,12 +3,12 @@ const LEVELS = [
     id: 1,
     name: 'THREAT LEVEL',
     subtitle: 'Identify the exact threat number',
-    timeLimit: 30,
+    timeLimit: 60,
     analyst: {
-      hint: 'The threat number is EXACTLY what you see. Your job is to tell Operator the exact number.',
+      hint: 'Read the signal and choose carefully.',
       options: ['18', '19', '20', '21'],
       answer: '20',
-      description: 'The correct answer is 20'
+      description: 'Use the available clues and signal.'
     },
     operator: {
       value: '20',
@@ -25,12 +25,12 @@ const LEVELS = [
     id: 2,
     name: 'EVACUATION',
     subtitle: 'Guide survivors to safety',
-    timeLimit: 30,
+    timeLimit: 60,
     analyst: {
-      hint: 'The safest location is ROOF. LOW danger means the safest option shown.',
+      hint: 'Use the signal and the situation to infer the safest option.',
       options: ['BASEMENT', 'ROOF', 'TUNNEL', 'GARAGE'],
       answer: 'ROOF',
-      description: 'The correct answer is ROOF'
+      description: 'Trust the signal, not your panic.'
     },
     operator: {
       value: 'ROOF',
@@ -47,12 +47,12 @@ const LEVELS = [
     id: 3,
     name: 'SYMPTOM CHECK',
     subtitle: 'Identify the infected symptom',
-    timeLimit: 25,
+    timeLimit: 60,
     analyst: {
-      hint: 'HIGH danger = the MOST SEVERE symptom. Look for "FOAMING MOUTH" - it\'s the worst one.',
+      hint: 'Higher danger means a more severe symptom.',
       options: ['FEVER', 'LIMPING', 'FOAMING MOUTH', 'BLEEDING EYES'],
       answer: 'FOAMING MOUTH',
-      description: 'The correct answer is FOAMING MOUTH'
+      description: 'Pick based on the signal and severity.'
     },
     operator: {
       value: 'FOAMING MOUTH',
@@ -69,58 +69,63 @@ const LEVELS = [
     id: 4,
     name: 'BIOHAZARD',
     subtitle: '⚠️ NEXUS AI CORRUPTION ACTIVE',
-    timeLimit: 25,
+    timeLimit: 60,
     analyst: {
-      hint: '⚠️ NEXUS is showing you WRONG INFO! Look at the WARNING. The real danger is HIGH, not LOW!',
+      hint: 'Warning: this round may contain false information.',
       options: ['🧟', '☣️', '💉', '🔥'],
       answer: '☣️',
-      description: 'The correct answer is ☣️ (but NEXUS is lying!)',
+      description: 'Something in the system is lying this round.',
       warning: 'NEXUS AI CORRUPTION: Your hint may be manipulated!'
     },
     operator: {
       value: '☣️',
       fakeValue: '🧟',
-      description: '⚠️ NEXUS may be showing fake data. Trust Analyst\'s hint!'
+      description: '⚠️ NEXUS may be showing fake data. Trust Analyst\'s hint!',
     },
     briefing: {
       situation: '☣️ WARNING: The villain AI NEXUS is trying to manipulate your systems!',
-      analystMission: 'You see the CORRECT answer but NEXUS might corrupt your hint. Try your best to warn Operator!',
-      operatorMission: 'Your screen may show FAKE DATA. Trust Analyst\'s text hint over what you see!',
-      tip: 'If Analyst sends a warning about NEXUS, their hint is more reliable than your screen!'
+      analystMission: 'You see the CORRECT answer but NEXUS is now on prank mode. Warn Operator with everything you have!',
+      operatorMission: 'Your screen may show FAKE DATA. NEXUS also thinks this is a zombie party. Trust the Analyst, not the meme.',
+      tip: 'If Analyst sends a warning about NEXUS, their hint is more reliable than your screen!',
     }
   },
+
   {
-    id: 5,
-    name: 'BLACKOUT',
-    subtitle: '⛔ ALL COMMUNICATIONS JAMMED',
-    timeLimit: 20,
-    analyst: {
-      hint: '⛔ I CAN\'T REACH YOU! No signals work. Trust your instincts!',
-      options: ['SEAL DOOR', 'RUN', 'HIDE', 'FIGHT'],
-      answer: 'HIDE',
-      description: 'The correct answer is HIDE'
-    },
-    operator: {
-      value: '???',
-      description: 'Communications down! Analyst can\'t help. Decide alone!'
-    },
-    briefing: {
-      situation: '⛔ BLACKOUT: NEXUS has jammed all communications!',
-      analystMission: 'You can\'t send any signals! Try typing something but Operator is on their own.',
-      operatorMission: 'NO ONE CAN HELP YOU! Your screen shows nothing useful. Trust your survival instincts.',
-      tip: 'In the dark with no intel, the smartest move is usually to HIDE and wait.'
-    }
+  id: 5,
+  name: 'BLACKOUT',
+  subtitle: '⛔ ALL COMMUNICATIONS JAMMED',
+  timeLimit: 60,
+
+  analyst: {
+    hint: 'No reliable signal is available this round.',
+    options: ['SEAL DOOR', 'RUN', 'HIDE', 'FIGHT'],
+    answer: 'HIDE',
+    description: 'Trust instinct when communication fails.'
   },
+
+  operator: {
+    value: '???',
+    description: 'All systems offline. No signal transmission possible.'
+  },
+
+  briefing: {
+    situation: '⛔ BLACKOUT: NEXUS has shut down all communication channels.',
+    analystMission: 'You cannot send or receive signals. You are isolated.',
+    operatorMission: 'You have no guidance. No system input. No communication.',
+    tip: 'When information is gone, survival depends on instinct... or luck.'
+  }
+  },
+  
   {
     id: 6,
     name: 'FINAL MISSION',
     subtitle: 'Last chance - 8 seconds!',
-    timeLimit: 8,
+    timeLimit: 60,
     analyst: {
-      hint: 'It\'s BREACH! MAXIMUM DANGER! Only one option matches - DETONATE BUNKER!',
+      hint: 'Maximum danger means the most extreme response.',
       options: ['EVACUATE', 'HIDE', 'DETONATE BUNKER', 'SEND SOS'],
       answer: 'DETONATE BUNKER',
-      description: 'The correct answer is DETONATE BUNKER'
+      description: 'Use the signal and choose the highest-stakes action.'
     },
     operator: {
       value: 'DETONATE BUNKER',

@@ -16,6 +16,7 @@ export default function LobbyContainer() {
 
   useEffect(() => {
     setPlayers([]);
+    const playerToken = localStorage.getItem("playerToken");
 
     const joinKey = `${roomCode}:${name}`;
     if (joinedKeyRef.current !== joinKey) {
@@ -24,6 +25,7 @@ export default function LobbyContainer() {
       socket.emit('join_room', {
         roomCode,
         name,
+        token: playerToken,
       });
     }
 
@@ -69,9 +71,9 @@ export default function LobbyContainer() {
   const canStart = players.length === 2 && isHost;
 
   return (
-    <div style={{
+    <div className="mobile-page mobile-center" style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      justifyContent: 'center', alignItems: 'center', padding: '2rem',
+      justifyContent: 'center', alignItems: 'center', padding: '1rem',
     }}>
       <div style={{
         position: 'fixed', inset: 0,
@@ -79,7 +81,7 @@ export default function LobbyContainer() {
         backgroundSize: '40px 40px', pointerEvents: 'none',
       }} />
 
-      <div style={{ border: '1px solid #1a2d44', padding: '2.5rem', background: '#0d1421', maxWidth: '420px', width: '100%', position: 'relative' }}>
+      <div className="mobile-card mobile-card--wide" style={{ border: '1px solid #1a2d44', padding: '2.5rem', background: '#0d1421', maxWidth: '420px', width: '100%', position: 'relative' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: '#00e5ff' }} />
 
         <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.75rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>

@@ -6,7 +6,7 @@ export default function LeaderboardContainer() {
   const navigate = useNavigate();
 
   return (
-    <div style={{
+    <div className="mobile-page mobile-center" style={{
       minHeight: '100vh', display: 'flex', flexDirection: 'column',
       justifyContent: 'center', alignItems: 'center', padding: '2rem',
     }}>
@@ -16,7 +16,7 @@ export default function LeaderboardContainer() {
         backgroundSize: '40px 40px', pointerEvents: 'none',
       }} />
 
-      <div style={{
+      <div className="mobile-card mobile-card--tight" style={{
         border: '1px solid #1a2d44', padding: '2.5rem',
         background: '#0d1421', maxWidth: '500px', width: '100%',
         position: 'relative',

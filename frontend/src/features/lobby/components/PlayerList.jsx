@@ -12,13 +12,13 @@ export default function PlayerList({ players }) {
           marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem',
           background: players[i] ? '#0d1421' : 'transparent',
           transition: 'all 0.3s',
-        }}>
+        }} className="mobile-player-row">
           <div style={{
             width: '8px', height: '8px', borderRadius: '50%',
             background: players[i] ? '#00ff88' : '#1a2d44',
             boxShadow: players[i] ? '0 0 8px #00ff88' : 'none',
           }} />
-          <span style={{ fontFamily: 'Share Tech Mono', fontSize: '0.85rem', color: players[i] ? '#e8f4f8' : '#1a2d44' }}>
+          <span className="mobile-player-name" style={{ fontFamily: 'Share Tech Mono', fontSize: '0.85rem', color: players[i] ? '#e8f4f8' : '#1a2d44' }}>
             {players[i] ? players[i].name : 'WAITING FOR PLAYER...'}
           </span>
           {players[i]?.role && (

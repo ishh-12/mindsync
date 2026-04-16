@@ -1,8 +1,12 @@
-const BASE_URL = "http://localhost:5000/api";
+import { BASE_URL } from "./config";
 
-export const createRoom = async () => {
+export const createRoom = async (name) => {
   const res = await fetch(`${BASE_URL}/room/create`, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name }),
   });
   return res.json();
 };

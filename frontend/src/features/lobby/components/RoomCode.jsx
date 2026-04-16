@@ -14,7 +14,7 @@ export default function RoomCode({ code }) {
       <div style={{ fontFamily: 'Share Tech Mono', color: '#4a6480', fontSize: '0.7rem', letterSpacing: '0.3em', marginBottom: '0.5rem' }}>
         ROOM CODE
       </div>
-      <div style={{
+      <div className="mobile-roomcode" style={{
         fontFamily: 'Barlow Condensed', fontSize: '4rem', fontWeight: 900,
         color: '#00e5ff', letterSpacing: '0.3em',
         textShadow: '0 0 30px rgba(0,229,255,0.5)',

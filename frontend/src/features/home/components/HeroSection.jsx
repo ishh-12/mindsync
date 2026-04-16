@@ -16,19 +16,6 @@ export default function HeroSection() {
       justifyContent: 'center', alignItems: 'center', textAlign: 'center',
       padding: '2rem', position: 'relative', overflow: 'hidden',
     }}>
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
-      }} />
-
-      <div style={{
-        position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
-        width: '400px', height: '400px',
-        background: 'radial-gradient(circle, rgba(0,229,255,0.06) 0%, transparent 70%)',
-        pointerEvents: 'none',
-      }} />
-
       <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(30px)', transition: 'all 0.8s ease', position: 'relative' }}>
         <div style={{ fontFamily: 'Share Tech Mono', color: '#00e5ff', fontSize: '0.8rem', letterSpacing: '0.3em', marginBottom: '1rem' }}>
           {'// CLASSIFIED: MULTIPLAYER PROTOCOL'}
@@ -58,26 +45,34 @@ export default function HeroSection() {
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => navigate('/create-room')} style={{
             background: '#00e5ff', color: '#080c14',
-            border: 'none', padding: '0.9rem 2.5rem',
+            border: 'none', padding: 'clamp(0.65rem, 2vw, 0.85rem) clamp(1.1rem, 3vw, 1.7rem)',
             fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-            fontSize: '1.1rem', letterSpacing: '0.15em',
+            fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', letterSpacing: '0.15em',
             cursor: 'pointer', transition: 'all 0.2s',
             boxShadow: '0 0 20px rgba(0,229,255,0.3)',
+            minHeight: '44px',
+            minWidth: '100px',
           }}
             onMouseEnter={e => e.target.style.boxShadow = '0 0 40px rgba(0,229,255,0.6)'}
             onMouseLeave={e => e.target.style.boxShadow = '0 0 20px rgba(0,229,255,0.3)'}
-          >CREATE ROOM</button>
+            onTouchStart={e => e.currentTarget.style.opacity = '0.85'}
+            onTouchEnd={e => e.currentTarget.style.opacity = '1'}
+          >CREATE 🚀</button>
 
           <button onClick={() => navigate('/join-room')} style={{
             background: 'transparent', color: '#00e5ff',
-            border: '1px solid #00e5ff', padding: '0.9rem 2.5rem',
+            border: '1px solid #00e5ff', padding: 'clamp(0.65rem, 2vw, 0.85rem) clamp(1.1rem, 3vw, 1.7rem)',
             fontFamily: 'Barlow Condensed, sans-serif', fontWeight: 700,
-            fontSize: '1.1rem', letterSpacing: '0.15em',
+            fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', letterSpacing: '0.15em',
             cursor: 'pointer', transition: 'all 0.2s',
+            minHeight: '44px',
+            minWidth: '100px',
           }}
             onMouseEnter={e => { e.target.style.background = 'rgba(0,229,255,0.08)'; }}
             onMouseLeave={e => { e.target.style.background = 'transparent'; }}
-          >JOIN ROOM</button>
+            onTouchStart={e => e.currentTarget.style.background = 'rgba(0,229,255,0.08)'}
+            onTouchEnd={e => e.currentTarget.style.background = 'transparent'}
+          >JOIN 🎮</button>
         </div>
       </div>
 

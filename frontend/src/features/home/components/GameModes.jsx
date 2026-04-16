@@ -2,15 +2,15 @@ import React, { useState } from 'react';
 
 const modes = [
   {
-    icon: '▶', label: 'CASUAL MODE', color: '#00ff41',
+    icon: '▶', label: 'CASUAL MODE', color: '#00e5ff',
     desc: 'Infinite rooms. Jump in anytime. No rankings. Pure survival training.',
-    tag: 'ONLINE', tagColor: '#00ff41',
+    tag: 'ONLINE', tagColor: '#00e5ff',
     lines: ['DIFFICULTY: ADAPTIVE', 'PLAYERS: 2', 'DURATION: ~3 MIN'],
   },
   {
-    icon: '◆', label: 'COMPETITIVE', color: '#ffcc00',
+    icon: '◆', label: 'COMPETITIVE', color: '#8bd3ff',
     desc: 'Ranked matches. Timed sessions. Climb the global leaderboard.',
-    tag: 'COMING SOON', tagColor: '#ffcc00',
+    tag: 'COMING SOON', tagColor: '#8bd3ff',
     lines: ['DIFFICULTY: MAXIMUM', 'PLAYERS: 2', 'RANKED: YES'],
   },
 ];
@@ -22,12 +22,12 @@ export default function GameModes() {
     <section style={{ padding: '4rem 2rem', maxWidth: '960px', margin: '0 auto', position: 'relative', zIndex: 2 }}>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-        <div style={{ width: '40px', height: '1px', background: '#00ff41' }}/>
-        <span style={{ fontFamily: 'Share Tech Mono', color: '#005514', fontSize: '0.68rem', letterSpacing: '0.3em' }}>{'// MISSION SELECT'}</span>
-        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,#00ff4133,transparent)' }}/>
+        <div style={{ width: '40px', height: '1px', background: '#00e5ff' }}/>
+        <span style={{ fontFamily: 'Share Tech Mono', color: '#4a6480', fontSize: '0.68rem', letterSpacing: '0.3em' }}>{'// MISSION SELECT'}</span>
+        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,#00e5ff33,transparent)' }}/>
       </div>
 
-      <h2 style={{ fontFamily: 'Orbitron', fontSize: 'clamp(1.5rem,4vw,2.5rem)', fontWeight: 900, color: '#00ff41', marginBottom: '3rem', textShadow: '0 0 20px #00ff4144', letterSpacing: '0.05em' }}>
+      <h2 style={{ fontFamily: 'Orbitron', fontSize: 'clamp(1.5rem,4vw,2.5rem)', fontWeight: 900, color: '#8bd3ff', marginBottom: '3rem', textShadow: '0 0 20px #00e5ff44', letterSpacing: '0.05em' }}>
         GAME MODES
       </h2>
 
@@ -39,7 +39,7 @@ export default function GameModes() {
             onMouseLeave={() => setActive(null)}
             style={{
               border: `1px solid ${active === i ? m.color + '66' : m.color + '22'}`,
-              background: active === i ? '#051509' : '#030f08',
+              background: active === i ? '#0b1a2c' : '#08111f',
               position: 'relative', overflow: 'hidden',
               padding: '2rem', transition: 'all 0.3s',
               boxShadow: active === i ? `0 0 24px ${m.color}11, inset 0 0 24px ${m.color}05` : 'none',
@@ -67,7 +67,7 @@ export default function GameModes() {
               {m.icon} {m.label}
             </div>
 
-            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.72rem', color: active === i ? '#007a22' : '#005514', lineHeight: 1.75, marginBottom: '1.5rem', transition: 'color 0.3s' }}>{m.desc}</div>
+            <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.72rem', color: active === i ? '#c9d1d9' : '#8aa0b8', lineHeight: 1.75, marginBottom: '1.5rem', transition: 'color 0.3s' }}>{m.desc}</div>
 
             {/* Specs */}
             <div style={{ borderTop: `1px solid ${m.color}22`, borderBottom: `1px solid ${m.color}11`, padding: '0.75rem 0', marginBottom: '1.25rem' }}>

@@ -2,6 +2,7 @@ const Room = require("../models/Room");
 const LeaderboardEntry = require("../models/LeaderboardEntry");
 const { generateLevelData } = require("../engine/levelManager");
 const { applyAIDeception } = require("../engine/aiEngine");
+const { getPlayer, requireRole } = require("../utils/auth");
 
 // In-memory timeout store — never saved to MongoDB
 const timeoutMap = {};
@@ -41,8 +42,11 @@ const emitLevelToPlayers = (io, room, levelData, finalData) => {
   room.players.forEach((player) => {
     if (player.role === "operator") {
       const operatorData = { ...levelData.operatorData };
-      if (levelData.corrupt && levelData.fakeDanger) {
-        operatorData.danger = levelData.fakeDanger;
+      if (levelData.corrupt && finalData.fakeDanger) {
+        operatorData.danger = finalData.fakeDanger;
+      }
+      if (levelData.corrupt && finalData.fakeValue) {
+        operatorData.value = finalData.fakeValue;
       }
       io.to(player.socketId).emit("level_data", {
         role: "operator",
@@ -50,6 +54,7 @@ const emitLevelToPlayers = (io, room, levelData, finalData) => {
         name: levelData.name,
         subtitle: levelData.subtitle,
         operatorData,
+        operatorNote: finalData.operatorNote,
         silenced: levelData.silenced,
         corrupt: levelData.corrupt,
         hint: levelData.description,
@@ -63,6 +68,7 @@ const emitLevelToPlayers = (io, room, levelData, finalData) => {
         subtitle: levelData.subtitle,
         clue: finalData.clue,
         hint: finalData.clue,
+        analystBrief: finalData.analystBrief,
         options: levelData.options,
         isCorrupted: finalData.isClueCorrupted,
         silenced: levelData.silenced,
@@ -80,6 +86,13 @@ const handleGameSockets = (io, socket) => {
     try {
       const code = roomCode?.trim()?.toUpperCase();
       const playerName = name?.trim();
+
+      const player = {
+  socketId: socket.id,  // 🔥 THIS MUST EXIST
+  name,
+  role,
+};
+console.log("JOINED PLAYER:", player);
 
       if (!code || !playerName) return socket.emit("error", "roomCode and name are required");
 
@@ -159,120 +172,184 @@ const handleGameSockets = (io, socket) => {
 
   // ── start_level ────────────────────────────────────────────────────────────
   socket.on("start_level", async ({ roomCode }) => {
-    try {
-      const code = roomCode?.trim()?.toUpperCase();
-      if (!code) return socket.emit("error", "roomCode is required");
-
-      const room = await Room.findOne({ roomCode: code });
-      if (!room) return socket.emit("error", "Room not found");
-      if (room.players.length < 2) return socket.emit("error", "Need 2 players to start");
-
-      if (!room.level || room.level < 1) room.level = 1;
-
-      const levelData = generateLevelData(room.level);
-      const finalData = applyAIDeception(levelData, room.level, room);
-
-      console.log(`LEVEL ${room.level} | Answer: ${levelData.correctAnswer} | Corrupt: ${levelData.corrupt}`);
-
-      room.currentAnswer = levelData.correctAnswer;
-      room.status = "playing";
-      await room.save();
-
-      const timeLimit = getTimeLimit(room.level);
-      io.to(code).emit("timer_start", { time: timeLimit });
-      emitLevelToPlayers(io, room, levelData, finalData);
-
-      clearRoomTimeout(code);
-      timeoutMap[code] = setTimeout(async () => {
-        try {
-          const updated = await Room.findOne({ roomCode: code });
-          if (!updated || updated.currentAnswer == null) return;
-          if (updated.level !== room.level) return;
-
-          updated.score = (updated.score || 0) - 5;
-          updated.currentAnswer = null;
-          updated.level = (updated.level || 1) + 1;
-          await updated.save();
-          delete timeoutMap[code];
-
-          if (updated.level > 6) {
-            await persistLeaderboard(updated);
-            return io.to(code).emit("game_over", { score: updated.score });
-          }
-
-          io.to(code).emit("time_up", {
-            message: "TIME UP — THEY GOT IN",
-            score: updated.score,
-            level: updated.level,
-          });
-        } catch (err) {
-          console.error("TIMEOUT ERROR:", err.message);
-        }
-      }, timeLimit * 1000);
-
-    } catch (err) {
-      console.error("START LEVEL ERROR:", err.message);
-      socket.emit("error", "Error starting level");
-    }
-  });
-
-  // ── send_signal ────────────────────────────────────────────────────────────
-  socket.on("send_signal", ({ roomCode, signal }) => {
+  try {
     const code = roomCode?.trim()?.toUpperCase();
-    const sig = signal?.trim()?.toUpperCase();
     if (!code) return socket.emit("error", "roomCode is required");
-    if (!ALLOWED_SIGNALS.includes(sig)) return socket.emit("error", `Invalid signal. Use: ${ALLOWED_SIGNALS.join(", ")}`);
-    socket.to(code).emit("receive_signal", sig);
-    console.log(`SIGNAL: ${sig} in ${code}`);
-  });
 
+    const room = await Room.findOne({ roomCode: code });
+    if (!room) return socket.emit("error", "Room not found");
+    if (room.players.length < 2) return socket.emit("error", "Need 2 players");
+
+    // 🔐 AUTH
+    const player = getPlayer(room, socket);
+    console.log("AUTH CHECK PLAYER:", player);
+    if (!requireRole(player, "operator", socket)) return;
+
+    if (!room.level || room.level < 1) room.level = 1;
+
+    const levelData = generateLevelData(room.level);
+    const finalData = applyAIDeception(levelData, room.level, room);
+
+    console.log("EVENT:", {
+      type: "START_LEVEL",
+      room: code,
+      user: socket.id,
+      level: room.level,
+    });
+
+    room.currentAnswer = levelData.correctAnswer;
+    room.status = "playing";
+    await room.save();
+
+    const timeLimit = getTimeLimit(room.level);
+
+    io.to(code).emit("timer_start", { time: timeLimit });
+
+    emitLevelToPlayers(io, room, levelData, finalData);
+
+    clearRoomTimeout(code);
+
+    timeoutMap[code] = setTimeout(async () => {
+      try {
+        const updated = await Room.findOne({ roomCode: code });
+
+        if (!updated || updated.currentAnswer == null) return;
+        if (updated.level !== room.level) return;
+
+        updated.score = (updated.score || 0) - 5;
+        updated.currentAnswer = null;
+        updated.level = (updated.level || 1) + 1;
+
+        await updated.save();
+        delete timeoutMap[code];
+
+        if (updated.level > 6) {
+          await persistLeaderboard(updated);
+          return io.to(code).emit("game_over", {
+            score: updated.score,
+          });
+        }
+
+        io.to(code).emit("time_up", {
+          message: "TIME UP",
+          score: updated.score,
+          level: updated.level,
+        });
+
+      } catch (err) {
+        console.error("TIMEOUT ERROR:", err.message);
+      }
+    }, timeLimit * 1000);
+
+  } catch (err) {
+    console.error("START LEVEL ERROR:", err.message);
+    socket.emit("error", "Error starting level");
+  }
+});
+  // ── send_signal ────────────────────────────────────────────────────────────
+ socket.on("send_signal", async ({ roomCode, signal }) => {
+  try {
+    const code = roomCode?.trim()?.toUpperCase();
+    if (!code) return socket.emit("error", "roomCode is required");
+
+    const room = await Room.findOne({ roomCode: code });
+    if (!room) return socket.emit("error", "Room not found");
+
+    // 🔐 AUTH
+    const player = getPlayer(room, socket);
+    console.log("AUTH CHECK PLAYER:", player);
+    if (!requireRole(player, "operator", socket)) return;
+
+    const levelData = generateLevelData(room.level);
+
+    // 🚫 Block signals in silenced levels
+    if (levelData.silenced) {
+      return socket.emit("error", "Signals disabled in this level");
+    }
+
+    const allowedSignals = ["STATIC", "SIGNAL", "BREACH"];
+
+    if (!allowedSignals.includes(signal)) {
+      return socket.emit("error", "Invalid signal");
+    }
+
+    console.log("EVENT:", {
+      type: "SEND_SIGNAL",
+      room: code,
+      user: socket.id,
+      signal,
+    });
+
+    // 📡 Send signal to analyst
+    room.players.forEach((p) => {
+      if (p.role === "analyst") {
+        io.to(p.socketId).emit("signal_received", signal);
+      }
+    });
+
+  } catch (err) {
+    console.error("SIGNAL ERROR:", err.message);
+  }
+});
   // ── select_option ──────────────────────────────────────────────────────────
   socket.on("select_option", async ({ roomCode, option }) => {
-    try {
-      const code = roomCode?.trim()?.toUpperCase();
-      const room = await Room.findOne({ roomCode: code });
-      if (!room) return socket.emit("error", "Room not found");
-      if (room.currentAnswer == null) return;
+  try {
+    const code = roomCode?.trim()?.toUpperCase();
+    if (!code) return socket.emit("error", "roomCode is required");
 
-      clearRoomTimeout(code);
+    const room = await Room.findOne({ roomCode: code });
+    if (!room) return socket.emit("error", "Room not found");
 
-      const isCorrect = String(option).trim() === String(room.currentAnswer).trim();
+    // 🔐 AUTH
+    const player = getPlayer(room, socket);
+    console.log("AUTH CHECK PLAYER:", player);
+    if (!requireRole(player, "analyst", socket)) return;
 
-      room.score = room.score || 0;
-      room.trustScore = room.trustScore || 0;
-      room.lastChoices = room.lastChoices || [];
-
-      let points = isCorrect ? 10 : -5;
-      if (isCorrect && room.level === 5) points += 15;
-      if (isCorrect && room.level === 6) points += 20;
-
-      room.score += points;
-      room.trustScore += isCorrect ? 1 : -1;
-      room.lastChoices.push(String(option));
-      if (room.lastChoices.length > 3) room.lastChoices.shift();
-
-      room.currentAnswer = null;
-      room.level = (room.level || 1) + 1;
-
-      if (room.level > 6) {
-        await room.save();
-        await persistLeaderboard(room);
-        return io.to(code).emit("game_over", { score: room.score });
-      }
-
-      await room.save();
-      io.to(code).emit("result", {
-        correct: isCorrect,
-        score: room.score,
-        level: room.level,
-        trustScore: room.trustScore,
-      });
-    } catch (err) {
-      console.error("SELECT OPTION ERROR:", err.message);
-      socket.emit("error", "Error selecting option");
+    if (room.currentAnswer == null) {
+      return socket.emit("error", "No active question");
     }
-  });
 
+    const isCorrect = option === room.currentAnswer;
+
+    let points = isCorrect ? 10 : -5;
+
+    if (isCorrect && room.level === 5) points += 15;
+    if (isCorrect && room.level === 6) points += 20;
+
+    room.score = (room.score || 0) + points;
+
+    room.currentAnswer = null;
+    room.level = (room.level || 1) + 1;
+
+    await room.save();
+
+    console.log("EVENT:", {
+      type: "SELECT_OPTION",
+      room: code,
+      user: socket.id,
+      option,
+      correct: isCorrect,
+    });
+
+    if (room.level > 6) {
+      await persistLeaderboard(room);
+
+      return io.to(code).emit("game_over", {
+        score: room.score,
+      });
+    }
+
+    io.to(code).emit("level_result", {
+      correct: isCorrect,
+      score: room.score,
+      level: room.level,
+    });
+
+  } catch (err) {
+    console.error("ANSWER ERROR:", err.message);
+    socket.emit("error", "Error processing answer");
+  }
+});
   // ── disconnect ─────────────────────────────────────────────────────────────
   socket.on("disconnect", async () => {
     try {

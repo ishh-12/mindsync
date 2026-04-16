@@ -41,7 +41,7 @@ export default function LeaderboardTable() {
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 60px', gap: '0.5rem', padding: '0 0.5rem 0.75rem', borderBottom: '1px solid #1a2d44', marginBottom: '0.5rem' }}>
+      <div className="mobile-leaderboard-header" style={{ display: 'grid', gridTemplateColumns: '40px 1fr 80px 60px', gap: '0.5rem', padding: '0 0.5rem 0.75rem', borderBottom: '1px solid #1a2d44', marginBottom: '0.5rem' }}>
         {['#', 'CALLSIGN', 'SCORE', 'GAMES'].map(header => (
           <div key={header} style={{ fontFamily: 'Share Tech Mono', fontSize: '0.65rem', color: '#4a6480', letterSpacing: '0.2em' }}>{header}</div>
         ))}
@@ -71,7 +71,7 @@ export default function LeaderboardTable() {
       )}
 
       {!loading && !error && entries.map((entry, index) => (
-        <div key={entry._id || entry.name} style={{
+        <div key={entry._id || entry.name} className="mobile-leaderboard-row" style={{
           display: 'grid', gridTemplateColumns: '40px 1fr 80px 60px',
           gap: '0.5rem', padding: '0.75rem 0.5rem',
           borderBottom: '1px solid #1a2d441a',
