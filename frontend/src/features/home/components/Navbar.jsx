@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 function SparkLine({ color = '#00e5ff', width = 60, height = 18 }) {
@@ -20,6 +20,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [time, setTime] = useState('');
   const [ping, setPing] = useState(12);
+  const [musicOn, setMusicOn] = useState(false);
+  const audioRef = useRef(null);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -28,6 +30,37 @@ export default function Navbar() {
     }, 1000);
     return () => clearInterval(t);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, []);
+
+  const toggleMusic = async () => {
+    if (!audioRef.current) {
+      audioRef.current = new Audio('/audio/deadpool.mpeg');
+      audioRef.current.loop = true;
+      audioRef.current.volume = 0.16;
+    }
+
+    if (musicOn) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setMusicOn(false);
+      return;
+    }
+
+    try {
+      await audioRef.current.play();
+      setMusicOn(true);
+    } catch (error) {
+      console.warn('Home music playback failed:', error);
+    }
+  };
 
   const ticker = '› SYS:ONLINE  › ENCRYPTION:AES-256  › NEXUS.THREAT:ACTIVE  › PLAYERS.CONNECTED:0  › ROOMS.OPEN:0  › UPTIME:99.8%  › SIGNAL:CLEAN  › FIREWALL:ARMED  ';
 
@@ -98,7 +131,24 @@ export default function Navbar() {
           </div>
 
           {/* Right – Clock + ping + button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <button
+              onClick={toggleMusic}
+              style={{
+                background: musicOn ? '#00e5ff' : 'transparent',
+                color: musicOn ? '#080c14' : '#8bd3ff',
+                border: '1px solid #00e5ff44',
+                padding: '0.35rem 0.8rem',
+                fontFamily: 'Share Tech Mono',
+                cursor: 'pointer',
+                fontSize: '0.65rem',
+                letterSpacing: '0.12em',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {musicOn ? 'VIBE ON 🎶' : 'PLAY VIBE'}
+            </button>
+
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'VT323', fontSize: '1.3rem', color: '#00e5ff', letterSpacing: '0.1em', textShadow: '0 0 8px #00e5ff66', lineHeight: 1 }}>{time}</div>
               <div style={{ fontFamily: 'Share Tech Mono', fontSize: '0.5rem', color: '#4a6480', letterSpacing: '0.1em' }}>PING: {ping}ms</div>

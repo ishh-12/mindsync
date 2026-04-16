@@ -117,7 +117,7 @@ export default function Game() {
 
   const startAudioPlayback = async () => {
     if (!audioRef.current) {
-      audioRef.current = new Audio("/audio/whatsapp-audio.mpeg");
+      audioRef.current = new Audio("/audio/deadpool.mpeg");
       audioRef.current.loop = true;
       audioRef.current.volume = 0.16;
     }
