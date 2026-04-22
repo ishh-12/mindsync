@@ -26,6 +26,12 @@ const stripDirectSignalAnswer = (note) => {
     .trim();
 };
 
+const SIGNAL_RULES = [
+  { label: "STATIC", meaning: "Routine or expected habit", color: "#00ff88" },
+  { label: "SIGNAL", meaning: "Check, confirm, or read again", color: "#ffd60a" },
+  { label: "BREACH", meaning: "Urgent, high-risk, or panic state", color: "#ff3b5c" },
+];
+
 const SyncScreen = ({ roomCode, players, role, syncing }) => (
   <div
     style={{
@@ -257,6 +263,20 @@ export default function GameContainer({
               </div>
               <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.72rem", color: "#c9d1d9", lineHeight: 1.7 }}>
                 {stripDirectSignalAnswer(levelData.operatorNote) || "Roast says: slow / check / panic."}
+              </div>
+            </div>
+
+            <div style={{ border: "1px solid #1a2d44", background: "#080c14", padding: "0.9rem 1rem", marginBottom: "1rem" }}>
+              <div style={{ fontFamily: "Share Tech Mono", fontSize: "0.63rem", color: "#4a6480", letterSpacing: "0.2em", marginBottom: "0.6rem" }}>
+                SIGNAL RULES
+              </div>
+              <div style={{ display: "grid", gap: "0.55rem" }}>
+                {SIGNAL_RULES.map((rule) => (
+                  <div key={rule.label} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "baseline", fontFamily: "Share Tech Mono", fontSize: "0.68rem", lineHeight: 1.5 }}>
+                    <span style={{ color: rule.color, letterSpacing: "0.14em" }}>{rule.label}</span>
+                    <span style={{ color: "#9db0c4", textAlign: "right" }}>{rule.meaning}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
